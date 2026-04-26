@@ -1,0 +1,11 @@
+; Print hello
+
+@define ONE 1
+@define TWO 2
+
+    .text
+
+_main:
+    (a, b : a + b)
+    ( _ : ) => OUT[1]
+    ( : ) => HALT

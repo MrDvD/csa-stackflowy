@@ -1,0 +1,11 @@
+; Сложить и вычесть два 64-битных числа
+
+@define ONE 1
+
+    .text
+
+_main:
+    (a, b, c, d : a + b, c + d)
+    (ab, cd : ab + cd)
+    ( _ : ) => OUT[$ONE]
+    ( : ) => HALT

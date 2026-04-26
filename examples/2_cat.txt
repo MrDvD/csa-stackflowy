@@ -1,0 +1,27 @@
+; Redirect IN -> OUT till '\0'
+; using interruptions
+
+    .text
+
+; по умолчанию обработчик будет пустой:
+; ( : ) => IRET
+; а так можно переопределить добавлением системной метки
+_ir_0x0:
+    ( : flags ) <= FLG
+    ( flags : flags, flags & 0x3 ) ; запрет вложенных прерываний
+    ( flags : ) => FLG
+    ( : ch ) <= IN[2]
+    ( ch : ch, ch == '\0' ) => ? _stop
+    ( ch : ) => OUT[3] ; waits for SR == 1 & outputs it
+    ( flags : ) => FLG ; восстанавливает исходное состояние
+    ( : ) => IRET
+_stop:
+    ( : ) => HALT
+
+_main:
+    ( : 0x4 )
+    ( flags : ) => FLG ; разрешаем прерывания
+    ( : 1 )
+_infinite_loop:
+    ( a : a, a == 1 ) => ? _infinite_loop 
+    ( : ) => HALT

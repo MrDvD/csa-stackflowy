@@ -1,0 +1,27 @@
+; Проходимся по массиву в памяти и выводим строку (cstr, не массив напрямую)
+
+@define WORLD_ADDR 0x1000
+
+    .data@500
+    "Hello "
+
+    .data@$WORLD_ADDR
+    "World"
+
+@macro PRINT_CSTR(addr) { ; add macro name + idx so they won't overlap
+_print_loop:
+    (addr : addr + 1, addr)
+    (addr : ) <= MEM
+    (val : val, 1, val == 0) => ? _print_done
+    ( val, addr : ) => OUT
+    ( : ) => _print_loop
+_print_done:
+    ( _ : )
+}
+
+    .text
+
+_main:
+    $PRINT_CSTR(500) ; calling defined macros
+    $PRINT_CSTR($WORLD_ADDR)
+    ( : ) => HALT
