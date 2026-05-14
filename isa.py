@@ -1,7 +1,7 @@
-from enum import IntEnum
+from enum import Enum, IntEnum
 import re
 
-class Opcode(IntEnum):
+class Opcode(Enum):
   PUSH = (0x0, "push")
   POP  = (0x1, "pop")
   DUP  = (0x2, "duplicate")
@@ -57,11 +57,11 @@ class ArgType(IntEnum):
 
   @staticmethod
   def get(raw_arg: str) -> 'ArgType':
-    if raw_arg[:2] == '0x':
+    if re.match(r'^0x\d+$', raw_arg):
       return ArgType.HEX
     if re.match(r'^_\w+$', raw_arg):
       return ArgType.LABEL
-    if re.match(r'\d+', raw_arg):
+    if re.match(r'^\d+$', raw_arg):
       return ArgType.DEC
     return ArgType.UNKNOWN
 
@@ -81,10 +81,22 @@ class Variable:
   pattern = r'[A-Za-z]\w*'
   regex = re.compile(pattern)
 
-# use it later in preprocessor
 class Comment:
   pattern = r';.*'
   regex = re.compile(pattern)
+
+class Macros:
+  if_regex = re.compile(
+    r'@if\s*\((.*?)\)\s*\{(.*?)\}'
+    r'(?:\s*@elif\s*\((.*?)\)\s*\{(.*?)\})*'
+    r'(?:\s*@else\s*\{(.*?)\})?',
+    re.DOTALL
+  )
+  macro_regex = re.compile(
+    r'@macro\s+(\w+)\s*\((.*?)\)\s*\{(.*?)\}',
+    re.DOTALL
+  )
+  def_regex = re.compile(r'@define\s+(\w+)\s+(.+)')
 
 class Segment:
   data_regex = re.compile(r'\.data(?:@(0x\d+|\d+))?')

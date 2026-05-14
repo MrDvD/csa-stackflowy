@@ -55,7 +55,8 @@ class Translator:
           labels[label] = LabelDeclaration(segment_idx, pc)
           pc -= 1
         elif s:
-          content.extend(struct.pack("<c", list(s.group(1))))
+          content.extend(struct.pack("<c", [*list(s.group(1)), 0]))
+          pc += len(s.group(1)) + 1
         elif n:
           content.extend(struct.pack("i", list(n.group(0))))
         else:
@@ -366,24 +367,35 @@ class Translator:
     text_dump: bytearray = bytearray(text_pc)
 
     for seg in segments:
+      if seg.start is None:
+        raise Exception('Segment start is not resolved')
       match seg.__class__:
         case DataSegment.__class__:
-          data_dump[seg.start:seg.start + len(seg.data)] = seg.data
+          data_dump[seg.start:seg.start + len(seg.data)] = cast(bytes, seg.data)
         case InstructionsSegment.__class__:
           offset = seg.start
-          for instr in seg.data:
-            op_val = int(instr.opcode)
-            arg_val = 0
-            # C-STRINGS В ДАТА НЕ ЗАБУДЬ! (+1 К ДЛИНЕ!)
-            if instr.arg is not None:
-              if instr.arg in labels:
-                arg_val = labels[instr.arg].abs_addr if labels[instr.arg].abs_addr is not None else 0
-              else:
-                try:
-                  arg_val = int(instr.arg, 0)
-                except ValueError:
-                  arg_val = 0
-            text_dump[offset:offset+4] = struct.pack("<I", (op_val & 0xFF) | ((arg_val & 0xFFFFFF) << 8))
+          for instr in cast(List[Instruction], seg.data):
+            offset += 1
+            op_val = int(instr.opcode.value)
+            if instr.arg is None:
+              text_dump[offset:offset+1] = op_val.to_bytes()
+              continue
+            arg_val: int = 0
+            match ArgType.get(instr.arg):
+              case ArgType.DEC:
+                arg_val = int(instr.arg)
+              case ArgType.HEX:
+                arg_val = int(instr.arg, 16)
+              case ArgType.LABEL:
+                if instr.arg not in labels:
+                  raise Exception(f"Undefined label: {instr.arg}")
+                label_addr = labels[instr.arg].abs_addr
+                if label_addr is None:
+                  raise Exception(f"Unresolved absolute address for label: {instr.arg}")
+                arg_val = label_addr
+              case _:
+                raise Exception(f'Unknown argument "{instr.arg}" for instruction: {instr.opcode}')
+            text_dump[offset:offset+5] = struct.pack("<I", op_val, arg_val & 0xFFFFFFFF)
             offset += 4
         case _:
           raise Exception("Unknown segment class")
@@ -428,6 +440,7 @@ if __name__ == "__main__":
     source = f.read()
 
   code = preprocessor.preprocess(source)
+  print(code)
   bin_data, bin_code = translator.translate(code)
 
   os.makedirs(os.path.dirname(os.path.abspath(target)) or ".", exist_ok=True)
