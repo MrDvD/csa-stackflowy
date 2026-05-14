@@ -4,16 +4,24 @@
 
     .data@500
     "Hello "
+    56
+    44
 
     .data@$WORLD_ADDR
     "World"
 
-@macro PRINT_CSTR(addr) { ; add macro name + idx so they won't overlap
+@macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
 _print_loop:
-    (addr : addr + 1, addr)
-    (addr : ) <= MEM
-    (val : val, 1, val == 0) => ? _print_done
-    ( val, addr : ) => OUT
+    ( : addr )
+    ( addr : addr, addr )
+    ( addr : addr + 1 )
+    ( curr_addr, new_addr : new_addr, curr_addr )
+    ( addr : char ) <= MEM_DATA
+    ( char : char, char )
+    ( char : char == 0 )
+    ( : 1 ) ; load constant port number
+    ( is_null, port_num : port_num, is_null ) => ? _print_done
+    ( char, port_num : ) => OUT
     ( : ) => _print_loop
 _print_done:
     ( _ : )
