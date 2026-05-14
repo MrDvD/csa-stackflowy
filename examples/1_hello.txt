@@ -4,15 +4,13 @@
 
     .data@500
     "Hello "
-    56
-    44
 
     .data@$WORLD_ADDR
     "World"
 
 @macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
 _print_loop:
-    ( : addr )
+    ( : %addr )
     ( addr : addr, addr )
     ( addr : addr + 1 )
     ( curr_addr, new_addr : new_addr, curr_addr )
@@ -30,6 +28,6 @@ _print_done:
     .text
 
 _main:
-    $PRINT_CSTR(500) ; calling defined macros
+    $PRINT_CSTR(500) ; using defined macros
     $PRINT_CSTR($WORLD_ADDR)
     ( : ) => HALT
