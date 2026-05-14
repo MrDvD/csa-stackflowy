@@ -68,7 +68,7 @@ class Preprocessor:
           args = [a.strip() for a in match.group(1).split(',') if a.strip()]
           
           local_body = body
-          local_body = re.sub(r'(?<![%$])(_\w+)', rf'\1_{self.macro_counter}', local_body)
+          local_body = re.sub(r'(?<![%$A-Za-z])(_\w+)', rf'\1_{self.macro_counter}', local_body)
           
           for param, arg in zip(params, args):
             local_body = local_body.replace(f'%{param}', arg)

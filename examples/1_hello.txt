@@ -12,17 +12,19 @@
 _print_loop:
     ( : %addr )
     ( addr : addr, addr )
-    ( addr : addr + 1 )
+    ( : 1 )
+    ( addr, one : addr + one )
     ( curr_addr, new_addr : new_addr, curr_addr )
     ( addr : char ) <= MEM_DATA
     ( char : char, char )
-    ( char : char == 0 )
+    ( : 0 )
+    ( char, zero : char == zero )
     ( : 1 ) ; load constant port number
     ( is_null, port_num : port_num, is_null ) => ? _print_done
     ( char, port_num : ) => OUT
     ( : ) => _print_loop
 _print_done:
-    ( _ : )
+    ( addr : )
 }
 
     .text

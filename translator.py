@@ -33,7 +33,7 @@ class Translator:
     self.two_right_args = re.compile(rf'({Variable.pattern})\s*(,|\+|-|==|>=?|<=?|\+\*|\+\/|&|\||\^)\s*({Variable.pattern})\s*\)')
     self.one_right_arg = re.compile(rf'(-|~|<<|>>)?\s*({Variable.pattern}|{Numeral.pattern}|{Label.pattern})\s*\)')
     self.no_right_args = re.compile(r'\)')
-    self.effect = re.compile(r'(=>|<=)\s*(MEM_DATA|IN|OUT|FLG|RET|\.|\?)?')
+    self.effect = re.compile(r'(=>|<=)\s*(MEM_DATA|IN|OUT|FLG|RET|HALT|\.|\?)?')
     self.label_set = re.compile(rf'({Label.pattern}):')
     
   def _translate_data(self, segment_idx: int, address: int | None, data_str: str, labels: Dict[str, LabelDeclaration]) -> DataSegment:
@@ -55,9 +55,16 @@ class Translator:
           labels[label] = LabelDeclaration(segment_idx, pc)
           pc -= 1
         elif s:
-          content.extend(struct.pack("<c", [*list(s.group(1)), 0]))
-          pc += len(s.group(1)) + 1
+          st = s.group(1)
+          idx += self._calc_left_space(line[idx:], offset=len(s.group(0)))
+          st_bytes = st.encode('ascii')
+          for i in range(0, len(st_bytes), 4):
+            chunk = st_bytes[i:i+4]
+            padded = chunk.ljust(4, b'\x00')
+            content.extend(struct.pack("<I", struct.unpack(">I", padded)[0]))
+          pc += ((len(st_bytes) + 3) // 4) * 4
         elif n:
+          idx += self._calc_left_space(line[idx:], offset=len(n.group(0)))
           content.extend(struct.pack("i", list(n.group(0))))
         else:
           raise Exception('Unknown data token')
@@ -65,7 +72,7 @@ class Translator:
   
   def _calc_left_space(self, line: str, offset: int = 0) -> int:
     new_line = line[offset:]
-    return len(new_line) - len(new_line.lstrip())
+    return len(new_line) - len(new_line.lstrip()) + offset
   
   def _parse_address(self, raw_address: str | None) -> int | None:
     if raw_address is None:
@@ -175,6 +182,7 @@ class Translator:
             effect = self.effect.match(line, idx)
             if not effect:
               raise Exception("Unexpected operands sequence")
+            idx += self._calc_left_space(line[idx:], len(effect.group(0)))
             arrow, op = effect.group(1), effect.group(2)
             if arrow != "=>":
               raise Exception("Unexpected arrow direction")
@@ -231,6 +239,7 @@ class Translator:
             effect = self.effect.match(line, idx)
             if not effect:
               raise Exception("Unknown operands sequence")
+            idx += self._calc_left_space(line[idx:], len(effect.group(0)))
             arrow, op = effect.group(1), effect.group(2)
             if arrow != '<=':
               raise Exception("Unexpected arrow direction")
@@ -249,6 +258,7 @@ class Translator:
             if not effect:
               instructions.append(Instruction(Opcode.POP))
               continue
+            idx += self._calc_left_space(line[idx:], len(effect.group(0)))
             arrow, op = effect.group(1), effect.group(2)
             if arrow != '=>':
               raise Exception('Unexpected arrow direction')
@@ -272,6 +282,7 @@ class Translator:
               instructions.append(Instruction(Opcode.PUSH, arg=rarg))
               pc += 4
               continue
+            idx += self._calc_left_space(line[idx:], len(effect.group(0)))
             arrow, op = effect.group(1), effect.group(2)
             if arrow != '<=':
               raise Exception('Unexpected arrow direction')
@@ -300,7 +311,7 @@ class Translator:
             pc += 4
             continue
           match op:
-            case 'HLT':
+            case 'HALT':
               instructions.append(Instruction(Opcode.HLT))
               continue
             case '?':
@@ -327,7 +338,7 @@ class Translator:
             case _:
               raise Exception('Unexpected effect on the right')
         else:
-          raise Exception("Unknown tokens found")
+          raise Exception(f"Unknown tokens found: {line[idx:idx+16]}")
 
     return InstructionsSegment(address, instructions)
 
@@ -341,19 +352,19 @@ class Translator:
     data_pc: int = 0
     text_pc: int = 0
     for seg in segments:
-      match seg.__class__:
-        case DataSegment.__class__:
+      match seg:
+        case DataSegment():
           if seg.start is None:
             seg.start = data_pc
           if seg.start < data_pc:
             raise Exception("Data segment overlap detected")
           data_pc = seg.start + len(seg.data)
-        case InstructionsSegment.__class__:
+        case InstructionsSegment():
           if seg.start is None:
             seg.start = text_pc
           if seg.start < text_pc:
             raise Exception("Data segment overlap detected")
-          text_pc = seg.start + sum(map(lambda x: 1 if x.arg is None else 5, cast(List[Instruction], seg.data)))
+          text_pc = seg.start + sum(map(lambda x: 1 if x.arg is None else 5, seg.data))
         case _:
           raise Exception("Unknown segment class")
 
@@ -369,12 +380,12 @@ class Translator:
     for seg in segments:
       if seg.start is None:
         raise Exception('Segment start is not resolved')
-      match seg.__class__:
-        case DataSegment.__class__:
+      match seg:
+        case DataSegment():
           data_dump[seg.start:seg.start + len(seg.data)] = cast(bytes, seg.data)
-        case InstructionsSegment.__class__:
+        case InstructionsSegment():
           offset = seg.start
-          for instr in cast(List[Instruction], seg.data):
+          for instr in seg.data:
             offset += 1
             op_val = int(instr.opcode.value)
             if instr.arg is None:
@@ -395,7 +406,7 @@ class Translator:
                 arg_val = label_addr
               case _:
                 raise Exception(f'Unknown argument "{instr.arg}" for instruction: {instr.opcode}')
-            text_dump[offset:offset+5] = struct.pack("<I", op_val, arg_val & 0xFFFFFFFF)
+            text_dump[offset:offset+5] = struct.pack("<BI", op_val, arg_val & 0xFFFFFFFF)
             offset += 4
         case _:
           raise Exception("Unknown segment class")
@@ -412,7 +423,7 @@ class Translator:
       if d_match:
         raw_addr = d_match.group(1)
         addr = self._parse_address(raw_addr)
-        content_start = idx + d_match.end()
+        content_start = d_match.end()
         content_end = self._find_next(code, content_start)
         data_segment = self._translate_data(len(segments), addr, code[content_start:content_end], labels)
         segments.append(data_segment)
@@ -420,13 +431,13 @@ class Translator:
       elif i_match:
         raw_addr = i_match.group(1)
         addr = self._parse_address(raw_addr)
-        content_start = idx + i_match.end()
+        content_start = i_match.end()
         content_end = self._find_next(code, content_start)
         text_segment = self._translate_instructions(len(segments), addr, code[content_start:content_end], labels)
         segments.append(text_segment)
         idx = content_end
       elif code[idx].isspace():
-        idx += 1
+        idx += self._calc_left_space(code[idx:])
       else:
         raise Exception(f"Unknown segment at index {idx}: {code[idx:idx+15]!r}")
     return self._align_segments(segments, labels)
@@ -434,6 +445,7 @@ class Translator:
 if __name__ == "__main__":
   assert len(sys.argv) == 3, "Wrong arguments: translator.py <input_file> <target_file>"
   _, source, target = sys.argv
+  # source, target = "examples/1_hello.txt", "test" 
   translator, preprocessor = Translator(), Preprocessor()
 
   with open(source, encoding="utf-8") as f:
