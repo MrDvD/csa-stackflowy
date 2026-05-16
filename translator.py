@@ -1,6 +1,6 @@
 import os, sys, re, struct
 from typing import List, Dict, Tuple, cast
-from isa import Opcode, Label, Segment, ArgType, String, Numeral, Variable
+from isa import Opcode, Label, Segment, ArgType, String, Numeral, Variable, Decoder
 from preprocessor import Preprocessor
 from dataclasses import dataclass
 
@@ -382,14 +382,14 @@ class Translator:
         raise Exception('Segment start is not resolved')
       match seg:
         case DataSegment():
-          data_dump[seg.start:seg.start + len(seg.data)] = cast(bytes, seg.data)
+          data_dump[seg.start:seg.start + len(seg.data)] = seg.data
         case InstructionsSegment():
           offset = seg.start
           for instr in seg.data:
-            offset += 1
             op_val = int(instr.opcode.value)
             if instr.arg is None:
               text_dump[offset:offset+1] = op_val.to_bytes()
+              offset += 1
               continue
             arg_val: int = 0
             match ArgType.get(instr.arg):
@@ -406,8 +406,8 @@ class Translator:
                 arg_val = label_addr
               case _:
                 raise Exception(f'Unknown argument "{instr.arg}" for instruction: {instr.opcode}')
-            text_dump[offset:offset+5] = struct.pack("<BI", op_val, arg_val & 0xFFFFFFFF)
-            offset += 4
+            text_dump[offset:offset+5] = op_val.to_bytes(1) + arg_val.to_bytes(4, byteorder='little')
+            offset += 5
         case _:
           raise Exception("Unknown segment class")
 
@@ -445,7 +445,6 @@ class Translator:
 if __name__ == "__main__":
   assert len(sys.argv) == 3, "Wrong arguments: translator.py <input_file> <target_file>"
   _, source, target = sys.argv
-  # source, target = "examples/1_hello.txt", "test" 
   translator, preprocessor = Translator(), Preprocessor()
 
   with open(source, encoding="utf-8") as f:
@@ -456,13 +455,11 @@ if __name__ == "__main__":
   bin_data, bin_code = translator.translate(code)
 
   os.makedirs(os.path.dirname(os.path.abspath(target)) or ".", exist_ok=True)
-  with open(target + "_data", "wb") as f:
+  with open(target + "_data.bin", "wb") as f:
     f.write(bin_data)
-  with open(target + "_code", "wb") as f:
+  with open(target + "_code.bin", "wb") as f:
     f.write(bin_code)
   with open(target + "_data.hex", "w") as f:
-    f.write(bin_data.hex())
+    f.write(Decoder.data_to_hex(bin_data))
   with open(target + "_code.hex", "w") as f:
-    f.write(bin_code.hex())
-
-  print("source LoC:", len(source.split("\n")), "code instr:", len(code))
+    f.write(Decoder.code_to_hex(bin_code))
