@@ -7,56 +7,42 @@
 
 \pagenumbering{gobble}
 
-\noindent
+\vspace*{\fill}
+
 \begin{center}
   \begin{adjustbox}{max width=\textwidth, max height=0.99\textheight}
-  \begin{tikzpicture}[processor arch]
-    \node[register, anchor=north east, minimum width=15cm] (datapath) {DataPath};
+  \begin{tikzpicture}[processor arch, scale=1.1, transform shape]
+    \node[memory, minimum height=6cm] (mem) {Memory:\\ \textit{Instructions} \\ \textit{(ROM)}};
+    \node[memory, minimum height=2cm, anchor=south, yshift=1cm] at (mem.north) (cache) {Cache:\\ \textit{Instructions}};
+    \node[register, anchor=south, yshift=1cm] at (cache.north) (i_prefetch) {Prefetch (32):\\ \textit{Instructions}};
 
-    \node[register, anchor=south west, yshift=4cm, xshift=1.5cm, minimum width=4.5cm, minimum height=3cm] at (datapath.west |- datapath.north) (i_decoder) {Instruction\\ Decoder};
-    \node[register, anchor=south west, yshift=1.5cm] at (i_decoder.north west) (step_counter) {Step\\ Counter};
-    \node[register, anchor=south, yshift=1.5cm] at (step_counter.north) (mux_step) {MUX\\ Step};
+    \node[memory, minimum height=3cm, anchor=south east, xshift=-3cm] at (mem.south west) (r_stack) {Stack:\\ \textit{Return}};
+    \node[register, anchor=south, yshift=1cm] at (r_stack.north) (tr) {T$_r$};
+    \node[mux, rotate=90, anchor=south, yshift=.5cm] at (tr.west) (mux_tr) {T$_r$};
+    \node[mux_flipped, anchor=south, yshift=1cm] at (tr.north) (mux_pc) {PC};
+    \node[register, anchor=south, yshift=.5cm] at (mux_pc.north) (pc) {PC};
 
-    \node[register, anchor=south west, xshift=2cm] at (i_decoder.south east) (mux_pc) {MUX\\ PC};
-    \node[register] at (mux_pc.south |- step_counter.east) (pc) {PC};
-
-    \node[memory, minimum height=6cm, anchor=south east, yshift=12cm] at (datapath.north east) (mem) {Memory:\\ \textit{Instructions,}\\ \textit{Data}};
-
-    \begin{registergroup}{ir}{IR (64)}
-      \node[register, anchor=north west, yshift=-1cm] at (datapath.west |- mem.north) (ir_1) {Op};
-      \node[register, right=5pt of ir_1] (ir_2) {Arg1};
-      \node[register, right=5pt of ir_2] (ir_3) {Arg1/2};
-      \node[register, right=5pt of ir_3] (ir_4) {$-$/Arg2};
+    \begin{registergroup}{micro_processor}{$\mu$CU}
+      \node[memory, minimum height=3cm, anchor=south east, xshift=-2.5cm] at (r_stack.south west) (mem_micro) {Memory:\\ \textit{Microcoded} \\ \textit{(ROM)}};
+      \node[register, rotate=90, anchor=south west, yshift=1cm, minimum width=3cm] at (mem_micro.south west) (mr) {MR};
+      \node[register, anchor=south east, yshift=1cm] at (mem_micro.north east) (pc) {$\mu$PC};
+      \node[mux, rotate=90, anchor=south, yshift=.5cm] at (pc.west) (mux_pc) {$\mu$PC};
     \end{registergroup}
 
-    % Data buses
-    \draw[data bus] (mem.west) -- +(-0.5, 0) node[dot] (mem_branch) {} |- ([yshift=1cm]ir_1.east |- ir.north) node[pos=0.6, above right] {\footnotesize data out} coordinate (ir_left) -- (ir_left |- ir.north);
-    \draw[data bus] ([yshift=1cm] ir_4.west |- ir.north) node[dot] {} coordinate (ir_right) -| (ir_right |- ir.north);
-    \draw[data bus] (mem_branch) -- (mem_branch |- datapath.north) node[pos=0.98, above right, rotate=90] {\footnotesize data to MUX Data Read};
-    % MUX PC
-    \draw[data bus] (mux_pc.-90 |- datapath.north) -- (mux_pc.-90) node[pos=0.98, above left, rotate=90] {\footnotesize ALU result};
-    \draw[data bus] (i_decoder.east |- mux_pc.west) -- (mux_pc.west) node[pos=0.98, above left] {\footnotesize select PC};
-    \draw[data bus] (mux_pc.north) -- (pc.south);
-    \draw[data bus] (ir.east) -| ([xshift=1cm]mux_pc.-20) -- (mux_pc.-20);
-    % Program Counter (PC)
-    \draw[data bus] (pc.east) -- +(0.5,0) node[dot] {} coordinate (pc_midpoint) |- node[pos=0.27, above, rotate=90] {\footnotesize ($+$instruction size)} (mux_pc.20);
-    \draw[data bus] (pc_midpoint) node[dot] {} -| ([xshift=2cm]pc_midpoint |- datapath.north) node[pos=0.98, above right, rotate=90] {\footnotesize to MUX ALU Left \& AR};
-    \draw[data bus] (i_decoder.40) |- (pc.west) node[pos=0.98, above left] {\footnotesize latch PC};
-    % Instruction Decoder
-    \draw[data bus] (i_decoder.-110) -- (i_decoder.-110 |- datapath.north) node[pos=0.9, above right, rotate=90] {\footnotesize control signals};
-    \draw[data bus] (i_decoder.51) -- +(0, 3) -| (ir_right.south |- ir.south) node[pos=0.98, above left, rotate=90] {\footnotesize latch IR right};
-    \draw[data bus] (i_decoder.67) -- +(0, 7) node[pos=0.5, above, rotate=90] {\footnotesize latch IR left} coordinate (latch_left_ir_branch) -| (ir_left |- ir.south);
-    \draw[data bus] (ir_1.-120) |- (i_decoder.west);
-    \draw[data bus] (i_decoder.-70 |- datapath.north) -- (i_decoder.-70) node[pos=0.98, above left, rotate=90] {\footnotesize SR};
-    % Step Counter
-    \draw[data bus] (step_counter.-110) -- (step_counter.-110 |- i_decoder.north);
-    \draw[data bus] (step_counter.-70 |- i_decoder.north) -- (step_counter.-70) node[pos=0.98, above left, rotate=90] {\footnotesize latch sc};
-    \draw[data bus] (mux_step.south) -| (step_counter.north);
-    \draw[data bus] ([yshift=0.5cm, xshift=-1cm]mux_step.north) -| (mux_step.north) node[pos=0.98, above right] {\footnotesize 0};
-    \draw[data bus] (step_counter.west) -- +(-0.5, 0) |- node[pos=0.17, above right, rotate=90] {\footnotesize ($+1$)} (mux_step.west);
-    \draw[data bus] (i_decoder.88) |- node[pos=0.17, above right, rotate=90] {\footnotesize select step} (mux_step.east);
+    \begin{registergroup}{nir}{NIR}
+      \node[register, anchor=east] at (mux_tr.north |- i_prefetch) (ir_4) {I$_3$ \\ (8)};
+      \node[register, left=.5cm of ir_4] (ir_3) {I$_2$ \\ (8)};
+      \node[register, left=.5cm of ir_3] (ir_2) {I$_1$ \\ (8)};
+      \node[register, left=.5cm of ir_2] (ir_1) {I$_0$ \\ (8)};
+    \end{registergroup}
+
+    \node[register, anchor=north, yshift=-1cm] at (ir_1.south) (ir) {IR \\ (8)};
+    \node[register, anchor=west] at (ir_2.east |- ir.east) (i_counter) {ICounter \\ (2)};
+    \node[mux_flipped, rotate=90, anchor=north, yshift=-.5cm] at (i_counter.east) (mux_i_counter) {ICounter};
   \end{tikzpicture}
   \end{adjustbox}
 \end{center}
+
+\vspace*{\fill}
 
 \end{document}

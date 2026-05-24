@@ -51,19 +51,28 @@
   },
   % 5. Multiplexer (Top-to-Bottom: Wide top, narrow bottom)
   mux/.style = {
-    draw = none,
+    shape = trapezium,
+    fill = gray!8,
+    trapezium angle = 107.4,
+    trapezium stretches = true,
+    draw = black,
+    thick,
     minimum width = 2.5cm,
     minimum height = 1.2cm,
     align = center,
-    inner sep = 3pt,
-    path picture = {
-      \draw[thick]
-        (path picture bounding box.north west) --
-        (path picture bounding box.north east) --
-        ($(path picture bounding box.south east)!0.15!(path picture bounding box.south west)$) --
-        ($(path picture bounding box.south west)!0.15!(path picture bounding box.south east)$) --
-        cycle;
-    }
+    inner sep = 3pt
+  },
+  mux_flipped/.style = {
+    shape = trapezium,
+    fill = gray!8,
+    trapezium angle = 72.6,
+    trapezium stretches = true,
+    draw = black,
+    thick,
+    minimum width = 2.5cm,
+    minimum height = 1.2cm,
+    align = center,
+    inner sep = 3pt
   },
   % 6. Adder
   adder/.style = {
