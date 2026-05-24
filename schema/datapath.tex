@@ -7,12 +7,10 @@
 
 \pagenumbering{gobble}
 
-\vspace*{\fill}
-
 \begin{center}
-  \begin{adjustbox}{max width=\textwidth, max height=0.99\textheight}
-  \begin{tikzpicture}[processor arch, scale=1.1, transform shape]
-    \node[memory, minimum height=8cm] (mem) {Memory:\\ \textit{Data}};
+  \begin{adjustbox}{max width=\textwidth, max height=0.98\textheight}
+  \begin{tikzpicture}[processor arch, scale=1.29, transform shape]
+    \node[memory, minimum height=8cm] (mem) {Memory:\\ \textit{Data} \\ \textit{(RAM)}};
     \node[alu, anchor=south east, xshift=-4cm] at (mem.south west) (alu) {ALU};
     \node[mux, anchor=top left corner, yshift=2cm, xshift=-.5cm] at (alu.top left corner) (mux_alu_left) {ALU \\ Left};
     \node[mux, anchor=top right corner, yshift=2cm, xshift=.5cm] at (alu.top right corner) (mux_alu_right) {ALU \\ Right};
@@ -28,11 +26,55 @@
     \node[register, anchor=south, yshift=1.5cm] at (data_stack.north) (s) {S};
     \node[register, anchor=south, yshift=1.5cm] at (s.north) (td) {T$_d$};
     \node[mux, rotate=90, anchor=south, yshift=.5cm] at (td.west) (mux_td) {T$_d$};
-    \node[mux, rotate=90, anchor=south, yshift=.5cm] at (s.west) (mux_td) {S};
+    \node[mux, rotate=90, anchor=south, yshift=.5cm] at (s.west) (mux_s) {S};
+
+    % MUX Data Read
+    \draw[data bus] (mem.north) |- (mux_data_read.-145) node[pos=0.98, above right] {\footnotesize data out};
+    \draw[data bus] (io.west) -- +(-0.5,0) node[pos=0, above left] {\footnotesize data out} |- (mux_data_read.-50);
+    \draw[control bus] ([yshift=-1.5cm]mux_data_read.west) -- (mux_data_read.west) node[pos=0.98, above left, rotate=90] {\footnotesize select};
+    \draw[data bus] (mux_data_read.60) -| ([xshift=-1cm]mux_td.110) -- (mux_td.110);
+    \draw[control bus] ([yshift=-1cm]io.-110) -- (io.-110) node[pos=0.98, above left, rotate=90] {\footnotesize oe};
+    \draw[control bus] ([yshift=-1cm]io.-70) -- (io.-70) node[pos=0.98, above left, rotate=90] {\footnotesize wr};
+    \draw[control bus] ([xshift=-1cm]mem.-120) -- (mem.-120) node[pos=0.98, above left] {\footnotesize oe};
+    \draw[control bus] ([xshift=-1cm]mem.-115) -- (mem.-115) node[pos=0.98, above left] {\footnotesize wr};
+
+    % Data Stack
+    \draw[control bus] ([yshift=-4.5cm, xshift=-.5cm]mux_s.north) |- node[pos=0.22, dot] (s_branch_control) {} node[pos=0.02, above right, rotate=90] {\footnotesize select} ([yshift=-.45cm]mux_td.west) -- (mux_td.west);
+    \draw[control bus] (s_branch_control |- data_stack.155) node[dot] {} -- (data_stack.155);
+    \draw[control bus] (s_branch_control) -| (mux_s.west);
+    \draw[data bus] (mux_td.south) -- (td.west);
+    \draw[data bus] (mux_s.south) -- (s.west);
+    \draw[data bus] (data_stack.145) -| node[pos=0.98, above left, rotate=90] {\footnotesize previous} ([xshift=-1cm]mux_s.50) -- (mux_s.50);
+    \draw[control bus] ([xshift=1.5cm, yshift=.5cm]td.north) -| node[pos=0.02, above left] {\footnotesize latch} (td.north);
+    \draw[control bus] ([xshift=1.5cm, yshift=.5cm]s.north) -| node[pos=0.02, above left] {\footnotesize latch} (s.north);
+    \draw[control bus] ([xshift=-.5cm, yshift=-1.5cm]data_stack.170) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} (data_stack.170);
+    \draw[data bus] (td.east) -- +(1.5,0) |- node[pos=0.5, dot] (td_branch) {} ([yshift=1cm]mux_alu_right.130) -- (mux_alu_right.130);
+    \draw[data bus] (td_branch) |- node[pos=0.075, dot] (td_shift_branch) {} node[pos=0.98, above left] {\footnotesize addr} ([yshift=-1cm]mem.-100) -- (mem.-100);
+    \draw[data bus] (s.east) -- +(1.1,0) |- node[pos=0.5, dot] (s_branch) {} ([yshift=.5cm]mux_alu_left.130) -- (mux_alu_left.130);
+    \draw[data bus] (s_branch) |- node[pos=0.075, dot] (s_shift_branch) {} node[pos=1, above left] {\footnotesize data in} ([yshift=-1.25cm]mem.-80) node[dot] (data_in_branch) {} -- (mem.-80);
+    \draw[data bus] (data_in_branch) -| node[pos=0.98, above left, rotate=90] {\footnotesize data in} ([xshift=.5cm]io.-30) -- (io.-30);
+    \draw[data bus] (s_shift_branch) -| ([xshift=-.75cm]mux_td.140) -- (mux_td.140);
+    \draw[data bus] (td_shift_branch) -| ([xshift=-.25cm]mux_s.130) -- (mux_s.130);
+    \draw[data bus] ([xshift=-.5cm,yshift=1cm]mux_td.40) |- node[pos=0.02, below left, rotate=90] {\footnotesize NIR} (mux_td.40);
+
+    % ALU
+    \draw[data bus] (mux_alu_left.south) -- (mux_alu_left.south |- alu.north);
+    \draw[data bus] (mux_alu_right.south) -- (mux_alu_right.south |- alu.north);
+    \draw[data bus] (alu.-35) |- node[pos=0.5, above left] {\footnotesize alu result} +(-5.8,-0.75) |- node[pos=0.5] (alu_branch) {} ([xshift=-.75cm, yshift=1.75cm]mux_td.70) -- ([xshift=-.75cm]mux_td.70) -- (mux_td.70);
+    \draw[data bus] (alu_branch |- mux_sr.50) node[dot] {} -- (mux_sr.50);
+    \draw[data bus] (alu.-145) -- +(0,-0.5) -| node[pos=0.02, above left] {\footnotesize sr flags} ([xshift=-2.5cm]mux_sr.130) -- (mux_sr.130);
+    \draw[data bus] ([xshift=.5cm,yshift=0.5cm]mux_alu_left.50) -| node[pos=0.5, above right] {\footnotesize 0} (mux_alu_left.50);
+    \draw[control bus] ([xshift=-1.5cm]alu.west) -- node[pos=0.9, above left] {\footnotesize manage alu} (alu.west);
+    \draw[control bus] ([xshift=-1cm]mux_alu_left.west) -- node[pos=0.9, above left] {\footnotesize select} (mux_alu_left.west);
+    \draw[control bus] ([xshift=1cm]mux_alu_right.east) -- node[pos=0.9, above right] {\footnotesize select} (mux_alu_right.east);
+
+    % SR
+    \draw[data bus] (mux_sr.south) -- (sr.west);
+    \draw[data bus] (mux_alu_right.50 |- sr.south) -- (mux_alu_right.50);
+    \draw[control bus] ([yshift=1.5cm]sr.north) -- node[pos=0.98, above right, rotate=90] {\footnotesize latch} (sr.north);
+    \draw[control bus] ([yshift=1.5cm]mux_sr.east) -- node[pos=0.98, above right, rotate=90] {\footnotesize select} (mux_sr.east);
   \end{tikzpicture}
   \end{adjustbox}
 \end{center}
-
-\vspace*{\fill}
 
 \end{document}
