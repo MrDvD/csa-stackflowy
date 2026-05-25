@@ -81,7 +81,7 @@
     % State Decoder
     \draw[data bus] (ir.east) -- (s_decoder.west);
     \draw[data bus] (i_counter.north) |- node[pos=.94, dot] (i_counter_branch) {} ([yshift=-.5cm]s_decoder.south) -- (s_decoder.south);
-    \draw[data bus] (i_counter_branch) |- ([yshift=-.5cm]mux_i_counter.-50) -- (mux_i_counter.-50);
+    \draw[data bus] (i_counter_branch) |- node[pos=0.98, above right] {\scriptsize (+1)} ([yshift=-.5cm]mux_i_counter.-50) -- (mux_i_counter.-50);
     \draw[data bus] ([yshift=-.75cm]mux_i_counter.-120) -- node[pos=0.98, above left, rotate=90] {\footnotesize 0} (mux_i_counter.-120);
     \draw[data bus] (mux_i_counter.north) -- (i_counter.south);
     \draw[control bus] ([xshift=.5cm,yshift=1.25cm]mux_i_counter.east) |- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_i_counter.east);
