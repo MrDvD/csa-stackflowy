@@ -1,0 +1,106 @@
+% !TEX program = xelatex
+\documentclass[12pt]{article}
+
+\input{common/Preamble}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\vspace*{\fill}
+
+\begin{center}
+  \begin{adjustbox}{max width=\textwidth, max height=0.99\textheight}
+  \begin{tikzpicture}[processor arch, scale=1.45, transform shape]
+    \node[memory, minimum height=6cm] (mem) {Memory:\\ \textit{Instructions} \\ \textit{(ROM)}};
+    \node[memory, minimum height=2cm, anchor=south, yshift=1cm] at (mem.north) (cache) {Cache:\\ \textit{Instructions}};
+    \node[register, anchor=south, yshift=1cm] at (cache.north) (i_prefetch) {Prefetch (32):\\ \textit{Instructions}};
+
+    \node[memory, minimum height=3cm, anchor=south east, xshift=-1cm] at (mem.south west) (r_stack) {Stack:\\ \textit{Return}};
+    \node[register, anchor=south, yshift=1cm] at (r_stack.north) (tr) {T$_r$};
+    \node[mux, rotate=90, anchor=south, yshift=.5cm] at (tr.west) (mux_tr) {T$_r$};
+    \node[mux_flipped, anchor=south, yshift=1cm] at (tr.north) (mux_pc) {PC};
+    \node[register, anchor=south, yshift=.5cm] at (mux_pc.north) (pc) {PC};
+
+    \begin{registergroup}{micro_processor}{$\mu$CU}
+      \node[memory, minimum height=3cm, anchor=south east, xshift=-2.5cm] at (r_stack.south west) (mem_micro) {Memory:\\ \textit{Microcode} \\ \textit{(ROM)}};
+      \node[register, rotate=90, anchor=south west, yshift=1cm, minimum width=3cm, minimum height=.7cm] at (mem_micro.south west) (mr) {MR};
+      \node[register, anchor=south east, yshift=1cm] at (mem_micro.north east) (mpc) {$\mu$PC};
+      \node[mux, rotate=90, anchor=south, yshift=.5cm] at (mpc.west) (mux_mpc) {$\mu$PC};
+    \end{registergroup}
+
+    \begin{registergroup}{nir}{NIR}
+      \node[register, anchor=east, xshift=-2cm] at (mux_tr.north |- i_prefetch) (ir_4) {I$_3$ \\ (8)};
+      \node[register, left=.5cm of ir_4] (ir_3) {I$_2$ \\ (8)};
+      \node[register, left=.5cm of ir_3] (ir_2) {I$_1$ \\ (8)};
+      \node[register, left=.5cm of ir_2] (ir_1) {I$_0$ \\ (8)};
+    \end{registergroup}
+
+    \node[register, anchor=north, yshift=-1cm] at (ir_1.south) (ir) {IR \\ (8)};
+    \node[register, anchor=west, xshift=.5cm] at (ir_1.east |- ir.east) (s_decoder) {State\\ Decoder};
+    \node[register, anchor=north, yshift=-1cm] at (ir.south) (i_counter) {ICounter \\ (2)};
+    \node[mux_flipped, anchor=north, yshift=-.5cm] at (i_counter.south) (mux_i_counter) {ICounter};
+
+    % Memory
+    \draw[data bus] (mem.north) -- (cache.south) node[above left, rotate=90] {\footnotesize iout};
+    \draw[data bus] (cache.north) -- (i_prefetch.south) node[above left, rotate=90] {\footnotesize word};
+    \draw[control bus] ([xshift=-.5cm,yshift=-1.25cm]mem.west) |- node[pos=0.02, above right, rotate=90] {\footnotesize oe} (mem.west);
+
+    % Return Stack
+    \draw[data bus] (mux_pc.north) -- (pc.south);
+    \draw[data bus] (mux_tr.south) -- (tr.west);
+    \draw[data bus] (mux_pc.-100 |- tr.north) -- (mux_pc.-100);
+    \draw[data bus] ([xshift=-.9cm,yshift=-.75cm]mux_pc.-130) -| node[pos=0.5, above left] {\footnotesize NIR} (mux_pc.-130);
+    \draw[data bus] (pc.east) -- +(1,0) |- ([yshift=-.75cm]mux_pc.-60) node[pos=.5, dot] (pc_branch) {} -- (mux_pc.-60) node[below left, rotate=90] {\scriptsize (+1)};
+    \draw[data bus] (mux_pc.-35 |- pc_branch) node[dot] {} -- (mux_pc.-35) node[below left, rotate=90] {\scriptsize (+4)};
+    \draw[data bus] (pc_branch) |- ([xshift=-.25cm, yshift=-1cm]mux_tr.130) |- (mux_tr.130);
+    \draw[data bus] (pc_branch |- cache.west) node[dot] {} -- (cache.west);
+    \draw[data bus] (pc_branch |- mem.130) node[dot] {} -- (mem.130);
+    \draw[data bus] (r_stack.west) -| node[pos=0.02, above left] {\footnotesize prev} ([xshift=-.5cm]mux_tr.50) -- (mux_tr.50);
+    \draw[control bus] ([xshift=-1cm]r_stack.200) -- node[pos=0.98, above left] {\footnotesize latch} (r_stack.200);
+    \draw[control bus] ([xshift=-1cm]r_stack.220) -- node[pos=0.98, above left] {\footnotesize select} (r_stack.220);
+    \draw[control bus] ([xshift=-.3cm, yshift=1.25cm]mux_pc.west) |- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_pc.west);
+    \draw[control bus] ([xshift=-.5cm, yshift=1.25cm]pc.west) |- node[pos=0.02, above left, rotate=90] {\footnotesize latch} (pc.west);
+    \draw[control bus] ([yshift=1.4cm]mux_tr.east) -- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_tr.east);
+    \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]tr.south) -| node[pos=0.02, above left] {\footnotesize latch} (tr.south);
+
+    % IR/NIR
+    \draw[data bus] (ir_2.west) -- (ir_1.east);
+    \draw[data bus] (ir_3.west) -- (ir_2.east);
+    \draw[data bus] (ir_4.west) -- (ir_3.east);
+    \draw[data bus] (ir_1.south) -- (ir.north);
+    \draw[data bus] (i_prefetch.west) -- node[pos=0.02, above left] {\footnotesize high byte} (ir_4.east);
+    \draw[control bus] ([xshift=-.5cm, yshift=-3.5cm]ir.west) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} node[pos=0.5, dot] (ir_branch) {} (ir.west);
+    \draw[control bus] (ir_branch) |- ([yshift=1.15cm]ir_1.north) node[dot] (ir_1_branch) {} -- (ir_1.north);
+    \draw[control bus] (ir_1_branch) -| node[pos=0.5, dot] (ir_2_branch) {} (ir_2.north);
+    \draw[control bus] (ir_2_branch) -| node[pos=0.5, dot] (ir_3_branch) {} (ir_3.north);
+    \draw[control bus] (ir_3_branch) -| node[pos=0.5, dot] (ir_4_branch) {} (ir_4.north);
+    \draw[control bus] (ir_3_branch) -| (i_prefetch.north);
+    \draw[control bus] (ir_branch |- i_counter.west) node[dot] {} -- (i_counter.west);
+
+    % State Decoder
+    \draw[data bus] (ir.east) -- (s_decoder.west);
+    \draw[data bus] (i_counter.north) |- node[pos=.94, dot] (i_counter_branch) {} ([yshift=-.5cm]s_decoder.south) -- (s_decoder.south);
+    \draw[data bus] (i_counter_branch) |- node[pos=0.98, above right] {\scriptsize (+1)} ([yshift=-.5cm]mux_i_counter.-50) -- (mux_i_counter.-50);
+    \draw[data bus] ([yshift=-.75cm]mux_i_counter.-120) -- node[pos=0.98, above left, rotate=90] {\footnotesize 0} (mux_i_counter.-120);
+    \draw[data bus] (mux_i_counter.north) -- (i_counter.south);
+    \draw[control bus] ([xshift=.5cm,yshift=1.25cm]mux_i_counter.east) |- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_i_counter.east);
+    \draw[data bus] (s_decoder.-20) -- +(0.5,0) -| ([xshift=-.5cm]mux_mpc.50) -- (mux_mpc.50);
+    \draw[control bus] ([xshift=2.25cm]s_decoder.20) -- node[pos=0.02, above left] {\footnotesize cache miss} (s_decoder.20);
+
+    % MicroCU
+    \draw[data bus] (mux_mpc.south) -- (mpc.west);
+    \draw[control bus] ([xshift=1.9cm,yshift=.3cm]mux_mpc.east) -| node[pos=0.02, above left] {\footnotesize select} (mux_mpc.east);
+    \draw[control bus] ([yshift=1cm]mpc.55) -- node[pos=0.98, above right, rotate=90] {\footnotesize latch} (mpc.55);
+    \draw[control bus] ([yshift=1cm]mr.east) -- node[pos=0.98, above right, rotate=90] {\footnotesize latch} (mr.east);
+    \draw[data bus] (mem_micro.west |- mr.-145) -- (mr.-145) node[above right] {\footnotesize mout};
+    \draw[control bus] (mr.-35) -- (mem_micro.west |- mr.-35) node[above left] {\footnotesize oe};
+    \draw[data bus] (mpc.south) -- node[pos=.65, dot] (mpc_branch) {} (mpc.south |- mem_micro.north);
+    \draw[data bus] (mpc_branch) -| node[pos=0.98, above left, rotate=90] {\scriptsize (+1)} ([xshift=-.5cm]mux_mpc.130) -- (mux_mpc.130);
+  \end{tikzpicture}
+  \end{adjustbox}
+\end{center}
+
+\vspace*{\fill}
+
+\end{document}
