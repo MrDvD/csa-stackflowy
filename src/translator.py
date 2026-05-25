@@ -1,5 +1,5 @@
 import os, sys, re, struct
-from typing import List, Dict, Tuple, cast
+from typing import List, Dict, Tuple
 from isa import Opcode, Label, Segment, ArgType, String, Numeral, Variable, Decoder
 from preprocessor import Preprocessor
 from dataclasses import dataclass
@@ -442,9 +442,7 @@ class Translator:
         raise Exception(f"Unknown segment at index {idx}: {code[idx:idx+15]!r}")
     return self._align_segments(segments, labels)
 
-if __name__ == "__main__":
-  assert len(sys.argv) == 3, "Wrong arguments: translator.py <input_file> <target_file>"
-  _, source, target = sys.argv
+def main(source: str, target: str) -> None:
   translator, preprocessor = Translator(), Preprocessor()
 
   with open(source, encoding="utf-8") as f:
@@ -463,3 +461,8 @@ if __name__ == "__main__":
     f.write(Decoder.data_to_hex(bin_data))
   with open(target + "_code.hex", "w") as f:
     f.write(Decoder.code_to_hex(bin_code))
+
+if __name__ == "__main__":
+  assert len(sys.argv) == 3, "Wrong arguments: translator.py <input_file> <target_prefix>"
+  _, source, target = sys.argv
+  main(source, target)
