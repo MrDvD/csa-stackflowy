@@ -49,9 +49,10 @@
     % Return Stack
     \draw[data bus] (mux_pc.north) -- (pc.south);
     \draw[data bus] (mux_tr.south) -- (tr.west);
-    \draw[data bus] (mux_pc.-130 |- tr.north) -- (mux_pc.-130);
-    \draw[data bus] (pc.east) -- +(1,0) |- ([yshift=-.75cm]mux_pc.south) node[pos=.5, dot] (pc_branch) {} -- (mux_pc.south) node[below left, rotate=90] {\scriptsize (+1)};
-    \draw[data bus] (mux_pc.-50 |- pc_branch) node[dot] {} -- (mux_pc.-50) node[below left, rotate=90] {\scriptsize (+4)};
+    \draw[data bus] (mux_pc.-100 |- tr.north) -- (mux_pc.-100);
+    \draw[data bus] ([xshift=-.9cm,yshift=-.75cm]mux_pc.-130) -| node[pos=0.5, above left] {\footnotesize NIR} (mux_pc.-130);
+    \draw[data bus] (pc.east) -- +(1,0) |- ([yshift=-.75cm]mux_pc.-60) node[pos=.5, dot] (pc_branch) {} -- (mux_pc.-60) node[below left, rotate=90] {\scriptsize (+1)};
+    \draw[data bus] (mux_pc.-35 |- pc_branch) node[dot] {} -- (mux_pc.-35) node[below left, rotate=90] {\scriptsize (+4)};
     \draw[data bus] (pc_branch) |- ([xshift=-.25cm, yshift=-1cm]mux_tr.130) |- (mux_tr.130);
     \draw[data bus] (pc_branch |- cache.west) node[dot] {} -- (cache.west);
     \draw[data bus] (pc_branch |- mem.130) node[dot] {} -- (mem.130);
@@ -85,14 +86,15 @@
     \draw[data bus] (mux_i_counter.north) -- (i_counter.south);
     \draw[control bus] ([xshift=.5cm,yshift=1.25cm]mux_i_counter.east) |- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_i_counter.east);
     \draw[data bus] (s_decoder.-20) -- +(0.5,0) -| ([xshift=-.5cm]mux_mpc.50) -- (mux_mpc.50);
-    \draw[data bus] ([xshift=2.25cm]s_decoder.20) -- node[pos=0.02, above left] {\footnotesize cache miss} (s_decoder.20);
+    \draw[control bus] ([xshift=2.25cm]s_decoder.20) -- node[pos=0.02, above left] {\footnotesize cache miss} (s_decoder.20);
 
     % MicroCU
     \draw[data bus] (mux_mpc.south) -- (mpc.west);
     \draw[control bus] ([xshift=1.9cm,yshift=.3cm]mux_mpc.east) -| node[pos=0.02, above left] {\footnotesize select} (mux_mpc.east);
     \draw[control bus] ([yshift=1cm]mpc.55) -- node[pos=0.98, above right, rotate=90] {\footnotesize latch} (mpc.55);
     \draw[control bus] ([yshift=1cm]mr.east) -- node[pos=0.98, above right, rotate=90] {\footnotesize latch} (mr.east);
-    \draw[data bus] (mem_micro.west) -- (mr.south) node[above right] {\footnotesize mout};
+    \draw[data bus] (mem_micro.west |- mr.-145) -- (mr.-145) node[above right] {\footnotesize mout};
+    \draw[control bus] (mr.-35) -- (mem_micro.west |- mr.-35) node[above left] {\footnotesize oe};
     \draw[data bus] (mpc.south) -- node[pos=.65, dot] (mpc_branch) {} (mpc.south |- mem_micro.north);
     \draw[data bus] (mpc_branch) -| node[pos=0.98, above left, rotate=90] {\scriptsize (+1)} ([xshift=-.5cm]mux_mpc.130) -- (mux_mpc.130);
   \end{tikzpicture}
