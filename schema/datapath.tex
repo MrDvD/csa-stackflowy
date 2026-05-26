@@ -41,12 +41,12 @@
     \draw[control bus] ([xshift=-1cm]mem.-115) -- (mem.-115) node[pos=0.98, above left] {\footnotesize wr};
 
     % Data Stack
-    \draw[control bus] ([yshift=-4.5cm, xshift=-.5cm]mux_s.north) |- node[pos=0.5] (s_branch_control) {} node[pos=0.02, above right, rotate=90] {\footnotesize select} ([yshift=-.9cm]mux_s.west) -- (mux_s.west);
-    \draw[control bus] (s_branch_control |- data_stack.155) node[dot] {} -- (data_stack.155);
+    \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]mux_s.west) -| node[pos=0.5, above right] {\footnotesize select} (mux_s.west);
+    \draw[control bus] ([yshift=-2.5cm, xshift=-1cm]data_stack.155) |- node[pos=0.5, above left, rotate=90] {\footnotesize select} (data_stack.155);
     \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]mux_td.west) -| node[pos=0.5, above right] {\footnotesize select} (mux_td.west);
     \draw[data bus] (mux_td.south) -- (td.west);
     \draw[data bus] (mux_s.south) -- (s.west);
-    \draw[data bus] (data_stack.145) -| node[pos=0.98, above left, rotate=90] {\footnotesize previous} ([xshift=-1cm]mux_s.50) -- (mux_s.50);
+    \draw[data bus] (data_stack.145) -| node[pos=0.02, above left] {\footnotesize prev} ([xshift=-.5cm]mux_s.50) -- (mux_s.50);
     \draw[control bus] ([xshift=1.5cm, yshift=.5cm]td.north) -| node[pos=0.02, above left] {\footnotesize latch} (td.north);
     \draw[control bus] ([xshift=1.5cm, yshift=.5cm]s.north) -| node[pos=0.02, above left] {\footnotesize latch} (s.north);
     \draw[control bus] ([xshift=-.5cm, yshift=-1.5cm]data_stack.170) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} (data_stack.170);
@@ -57,7 +57,7 @@
     \draw[data bus] (s_branch) |- node[pos=0.075, dot] (s_shift_branch) {} node[pos=0.45, dot] (s_stack_branch) {} node[pos=1, above left] {\footnotesize data in} ([yshift=-1.25cm]mem.-80) node[dot] (data_in_branch) {} -- (mem.-80);
     \draw[data bus] (s_stack_branch) -| (data_stack.south) node[pos=0.5, above right] {\footnotesize next};
     \draw[data bus] (data_in_branch) -| node[pos=0.98, above left, rotate=90] {\footnotesize data in} ([xshift=1cm]io.30) -- (io.30);
-    \draw[data bus] (s_shift_branch) -| ([xshift=-.75cm]mux_td.140) -- (mux_td.140);
+    \draw[data bus] (s_shift_branch) -| ([xshift=-1cm]mux_td.140) -- (mux_td.140);
     \draw[data bus] (td_shift_branch) -| ([xshift=-.25cm]mux_s.130) -- (mux_s.130);
     \draw[data bus] ([xshift=-.5cm,yshift=1cm]mux_td.40) |- node[pos=0.02, below left, rotate=90] {\footnotesize NIR} (mux_td.40);
 
