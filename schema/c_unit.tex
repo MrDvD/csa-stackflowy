@@ -62,7 +62,8 @@
     \draw[control bus] ([xshift=-.3cm, yshift=1.25cm]mux_pc.west) |- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_pc.west);
     \draw[control bus] ([xshift=-.5cm, yshift=1.25cm]pc.west) |- node[pos=0.02, above left, rotate=90] {\footnotesize latch} (pc.west);
     \draw[control bus] ([yshift=1.4cm]mux_tr.east) -- node[pos=0.02, above left, rotate=90] {\footnotesize select} (mux_tr.east);
-    \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]tr.south) -| node[pos=0.02, above left] {\footnotesize latch} (tr.south);
+    \draw[control bus] ([yshift=-1.25cm, xshift=.5cm]tr.east) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} (tr.east);
+    \draw[data bus] (tr.south) -- node[pos=0.02, above left, rotate=90] {\footnotesize next} (tr.south |- r_stack.north);
 
     % IR/NIR
     \draw[data bus] (ir_2.west) -- (ir_1.east);
