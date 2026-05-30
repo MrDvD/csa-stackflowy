@@ -13,8 +13,8 @@ class Opcode(Enum):
 
   ADD  = (0x4, "add")
   SUB  = (0x5, "substract")
-  SMUL = (0x6, "multiply_step")
-  SDIV = (0x7, "divide_step")
+  MUL  = (0x6, "multiply")
+  DIV  = (0x7, "divide")
   AND  = (0x8, "and")
   OR   = (0x9, "or")
   XOR  = (0xA, "xor")
@@ -32,8 +32,8 @@ class Opcode(Enum):
   JMP   = (0x14, "jump")
   JMPIF = (0x15, "jump_if")
 
-  CALL = (0x16, "call")
-  RET  = (0x17, "ret")
+  CALL  = (0x16, "call")
+  RET   = (0x17, "ret")
 
   LOAD  = (0x18, "load")
   STORE = (0x19, "store")

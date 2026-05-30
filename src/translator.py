@@ -33,8 +33,9 @@ class Translator:
     self.two_right_args = re.compile(rf'({Variable.pattern})\s*(,|\+|-|==|>=?|<=?|\+\*|\+\/|&|\||\^)\s*({Variable.pattern})\s*\)')
     self.one_right_arg = re.compile(rf'(-|~|<<|>>)?\s*({Variable.pattern}|{Numeral.pattern}|{Label.pattern})\s*\)')
     self.no_right_args = re.compile(r'\)')
-    self.effect = re.compile(r'(=>|<=)\s*(MEM_DATA|IN|OUT|FLG|RET|HALT|\.|\?)?')
+    self.effect = re.compile(r'(=>|<=)\s*(MEM_DATA|IN|OUT|FLG|\.|\?)?')
     self.label_set = re.compile(rf'({Label.pattern}):')
+    self.control_flow = re.compile(r'<([^>]+)>')
     
   def _translate_data(self, segment_idx: int, address: int | None, data_str: str, labels: Dict[str, LabelDeclaration]) -> DataSegment:
     content: bytearray = bytearray()
@@ -92,9 +93,10 @@ class Translator:
                               instr_str: str,
                               labels: Dict[str, LabelDeclaration]) -> InstructionsSegment:
     instructions: List[Instruction] = list()
-    pc: int = -1
+    pc = -1
+    
     for line in instr_str.strip().splitlines():
-      idx: int = 0
+      idx = 0
       line = line.strip()
       if not line:
         continue
@@ -105,7 +107,8 @@ class Translator:
         one_l_arg = self.one_left_arg.match(line, idx)
         no_l_args = self.no_left_args.match(line, idx)
         label_set = self.label_set.match(line, idx)
-        effect = self.effect.match(line, idx)
+        control_flow_match = self.control_flow.match(line, idx)
+        
         if label_set:
           label = label_set.group(1)
           idx += self._calc_left_space(line[idx:], offset=len(label_set.group(0)))
@@ -137,11 +140,11 @@ class Translator:
                   continue
               case '+*':
                 if larg1 == rarg1 and larg2 == rarg2 or larg1 == rarg2 and larg2 == rarg1:
-                  instructions.append(Instruction(Opcode.SMUL))
+                  instructions.append(Instruction(Opcode.MUL))
                   continue
               case '+/':
                 if larg1 == rarg1 and larg2 == rarg2:
-                  instructions.append(Instruction(Opcode.SDIV))
+                  instructions.append(Instruction(Opcode.DIV))
                   continue
               case '&':
                 if larg1 == rarg1 and larg2 == rarg2 or larg1 == rarg2 and larg2 == rarg1:
@@ -296,50 +299,28 @@ class Translator:
             continue
           else:
             raise Exception("Unsupported operands sequence")
-        elif effect:
-          idx += self._calc_left_space(line[idx:], len(effect.group(0)))
-          arrow, op = effect.group(1), effect.group(2)
-          if arrow != '=>':
-            raise Exception('Unexpected arrow direction')
-          if not op:
-            label_match = Label.regex.match(line, idx)
-            if not label_match:
-              raise Exception("Label name expected but not found")
-            label: str = label_match.group(0)
-            idx += self._calc_left_space(line[idx:], len(label))
-            instructions.append(Instruction(Opcode.JMP, arg=label))
+        elif control_flow_match:
+          cf_content = control_flow_match.group(1).strip()
+          idx += self._calc_left_space(line[idx:], offset=len(control_flow_match.group(0)))
+          if cf_content == '...':
+            instructions.append(Instruction(Opcode.HLT))
+          elif cf_content == 'RET':
+            instructions.append(Instruction(Opcode.RET))
+          elif cf_content.startswith('?'):
+            label = cf_content[1:].strip()
+            instructions.append(Instruction(Opcode.JMPIF, arg=label))
             pc += 4
-            continue
-          match op:
-            case 'HALT':
-              instructions.append(Instruction(Opcode.HLT))
-              continue
-            case '?':
-              label_match = Label.regex.match(line, idx)
-              if not label_match:
-                raise Exception("Label name expected but not found")
-              label: str = label_match.group(0)
-              idx += self._calc_left_space(line[idx:], len(label))
-              instructions.append(Instruction(Opcode.JMPIF, arg=label))
-              pc += 4
-              continue
-            case 'RET':
-              instructions.append(Instruction(Opcode.RET))
-              continue
-            case '.':
-              label_match = Label.regex.match(line, idx)
-              if not label_match:
-                raise Exception("Label name expected but not found")
-              label: str = label_match.group(0)
-              idx += self._calc_left_space(line[idx:], len(label))
-              instructions.append(Instruction(Opcode.CALL, arg=label))
-              pc += 4
-              continue
-            case _:
-              raise Exception('Unexpected effect on the right')
+          elif cf_content.startswith('!'):
+            label = cf_content[1:].strip()
+            instructions.append(Instruction(Opcode.CALL, arg=label))
+            pc += 4
+          else:
+            instructions.append(Instruction(Opcode.JMP, arg=cf_content))
+            pc += 4
+          continue
         else:
           raise Exception(f"Unknown tokens found: {line[idx:idx+16]}")
-
+          
     return InstructionsSegment(address, instructions)
 
   def _find_next(self, code: str, start: int) -> int:
@@ -349,8 +330,11 @@ class Translator:
     return min(matches) if matches else len(code)
   
   def _align_segments(self, segments: List[DataSegment | InstructionsSegment], labels: Dict[str, LabelDeclaration]) -> Tuple[bytes, bytes]:
+    if '_main' not in labels:
+      raise Exception("Program has no entrypoint label '_main'!")
+    
     data_pc: int = 0
-    text_pc: int = 0
+    text_pc: int = 5
     for seg in segments:
       match seg:
         case DataSegment():
@@ -363,7 +347,7 @@ class Translator:
           if seg.start is None:
             seg.start = text_pc
           if seg.start < text_pc:
-            raise Exception("Data segment overlap detected")
+            raise Exception("Text segment overlap detected")
           text_pc = seg.start + sum(map(lambda x: 1 if x.arg is None else 5, seg.data))
         case _:
           raise Exception("Unknown segment class")
@@ -376,6 +360,10 @@ class Translator:
 
     data_dump: bytearray = bytearray(data_pc)
     text_dump: bytearray = bytearray(text_pc)
+
+    if labels['_main'].abs_addr is None:
+      raise Exception("Unresolved absolute address for entrypoint.")
+    text_dump[0:5] = Opcode.JMP.value.to_bytes() + labels['_main'].abs_addr.to_bytes(4, byteorder='little')
 
     for seg in segments:
       if seg.start is None:
@@ -449,7 +437,6 @@ def main(source: str, target: str) -> None:
     source = f.read()
 
   code = preprocessor.preprocess(source)
-  print(code)
   bin_data, bin_code = translator.translate(code)
 
   os.makedirs(os.path.dirname(os.path.abspath(target)) or ".", exist_ok=True)

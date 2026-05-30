@@ -1,5 +1,6 @@
 from datapath import DataPath
 from controlunit import ControlUnit
+from microcode import generate_microprogram
 from typing import List
 import logging
 import sys
@@ -7,15 +8,18 @@ import sys
 class Processor:
   def __init__(self, data_memory_size: int, text_memory_size: int, input_data: List[int]):
     self.data_path: DataPath = DataPath(data_memory_size, input_data)
-    self.control_unit: ControlUnit = ControlUnit(text_memory_size, list(), dict())
+    mprogram, state_decoder_map = generate_microprogram()
+    self.control_unit: ControlUnit = ControlUnit(text_memory_size, mprogram, state_decoder_map, self.data_path)
 
   def load_text(self, text_code: bytes) -> None:
     for idx, byte in enumerate(text_code):
-      self.control_unit.rom_instructions[idx] = byte
+      if idx < len(self.control_unit.rom_instructions):
+        self.control_unit.rom_instructions[idx] = byte
 
   def load_data(self, data_code: bytes) -> None:
     for idx, byte in enumerate(data_code):
-      self.data_path.memory[idx] = byte
+      if idx < len(self.data_path.memory):
+        self.data_path.memory[idx] = byte
 
   def run(self, limit: int) -> tuple[str, int]:
     logging.debug("%s", self.control_unit)
@@ -57,8 +61,14 @@ def main(data_file: str, text_file: str, input_file: str, data_mem_size: int, li
 
 if __name__ == "__main__":
   logging.getLogger().setLevel(logging.DEBUG)
-  assert len(sys.argv) == 6, "Wrong arguments: machine.py <data_file> <text_file> <input_file> <data_mem_size> <limit>"
+  if len(sys.argv) != 6:
+    print("Wrong arguments: machine.py <data_file> <text_file> <input_file> <data_mem_size> <limit>")
+    sys.exit(1)
   _, data_file_arg, text_file_arg, input_file_arg, data_mem_size, limit = sys.argv
-  assert data_mem_size.isdecimal(), "Wrong arguments: <data_mem_size> is not a decimal number"
-  assert limit.isdecimal(), "Wrong arguments: <limit> is not a decimal number"
+  if not data_mem_size.isdecimal():
+    print("Wrong arguments: <data_mem_size> is not a decimal number")
+    sys.exit(1)
+  if not limit.isdecimal():
+    print("Wrong arguments: <limit> is not a decimal number")
+    sys.exit(1)
   main(data_file_arg, text_file_arg, input_file_arg, int(data_mem_size), int(limit))

@@ -85,7 +85,7 @@ class DataPath:
 
     return res & 0xFFFFFFFF, v, c
 
-  def latch_td(self, sel: MuxTdSel, dr_sel: MuxDataReadSel = MuxDataReadSel.RAM, alu_op: AluOp = AluOp.PASSTHROUGH_L, nir_val: int = 0) -> None:
+  def latch_td(self, sel: MuxTdSel, dr_sel: MuxDataReadSel = MuxDataReadSel.RAM, alu_op: AluOp = AluOp.PASSTHROUGH_L, ifetch_val: int = 0) -> None:
     left_mux: int = self.s if False else 0
     right_mux: int = self.td if False else 0
     alu_res, _, _ = self._execute_alu(alu_op, left_mux, right_mux)
@@ -97,7 +97,7 @@ class DataPath:
     elif sel == MuxTdSel.ALU_RESULT:
       self.td = alu_res
     elif sel == MuxTdSel.NIR:
-      self.td = nir_val & 0xFFFFFFFF
+      self.td = ifetch_val & 0xFFFFFFFF
 
   def latch_s(self, sel: MuxSSel) -> None:
     if sel == MuxSSel.STACK_PREV:
