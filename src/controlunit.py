@@ -117,7 +117,7 @@ class ControlUnit:
         if state in self.state_decoder_map:
             return self.state_decoder_map[state]
         raise Exception("Unknown state occurred")
-    
+
     def latch_r_stack(self, sel: MuxRStack) -> List[int]:
         next_r_stack: List[int] = list()
         match sel:
@@ -130,7 +130,7 @@ class ControlUnit:
             case _:
                 raise Exception("Unknown MuxRStack selector")
         return next_r_stack
-    
+
     def latch_tr(self, sel: MuxTrSel) -> int:
         match sel:
             case MuxTrSel.PC:
@@ -139,7 +139,7 @@ class ControlUnit:
                 return self.return_stack[-1]
             case _:
                 raise Exception("Unknown MuxTr selector")
-    
+
     def latch_pc(self, sel: MuxPcSel) -> int:
         match sel:
             case MuxPcSel.I_PREFETCH:
@@ -152,10 +152,10 @@ class ControlUnit:
                 return self.tr
             case _:
                 raise Exception("Unknown MuxPC selector")
-    
+
     def latch_ir(self) -> int:
         return self.prefetch_buffer[3]
-    
+
     def latch_mpc(self, sel: MuxMpcSel) -> int:
         match sel:
             case MuxMpcSel.MPC_PLUS_1:
@@ -164,7 +164,7 @@ class ControlUnit:
                 return self._decode_state()
             case _:
                 raise Exception("Unknown MuxMpc selector")
-    
+
     def latch_mr(self) -> MicroInstruction:
         return self.mprogram[self.mpc % len(self.mprogram)]
 

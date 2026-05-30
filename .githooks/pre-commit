@@ -14,7 +14,7 @@ if [ -n "$RUN_CODE_CHECK" ]; then
   let 'TESTS++'
 
   echo -e "${BLUE}🔍 Running formatter (ruff format)...${NC}"
-  sh .githooks/do-format.sh >/dev/null 2>&1
+  sh .githooks/check-format.sh >/dev/null 2>&1
     if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Formatting failed!${NC}"
     FAILED=1

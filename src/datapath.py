@@ -74,11 +74,13 @@ class DataPath:
                 raise Exception("Input buffer is empty")
             case _:
                 raise Exception("Unknown DataReadMux selector")
-    
+
     def _read_sr(self) -> int:
         return (2 if self.sr_v else 0) | (1 if self.sr_c else 0)
-    
-    def _execute_alu_operands(self, alu_l_sel: MuxAluLeftSel, alu_r_sel: MuxAluRightSel) -> Tuple[int, int]:
+
+    def _execute_alu_operands(
+        self, alu_l_sel: MuxAluLeftSel, alu_r_sel: MuxAluRightSel
+    ) -> Tuple[int, int]:
         match alu_l_sel:
             case MuxAluLeftSel.S:
                 left = self.s
