@@ -41,8 +41,8 @@
     \draw[control bus] ([xshift=-1cm]mem.-115) -- (mem.-115) node[pos=0.98, above left] {\footnotesize wr};
 
     % Data Stack
-    \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]mux_s.west) -| node[pos=0.5, above right] {\footnotesize select} (mux_s.west);
-    \draw[control bus] ([yshift=-2.5cm, xshift=-1cm]data_stack.155) |- node[pos=0.5, above left, rotate=90] {\footnotesize select} (data_stack.155);
+    \draw[control bus] ([yshift=-2.5cm, xshift=-1cm]data_stack.155) |- node[pos=0.5, dot] (latch_stack_branch) {} node[pos=0.5, above left, rotate=90] {\footnotesize select} (data_stack.155);
+    \draw[control bus] (latch_stack_branch) |- ([yshift=-.9cm]mux_s.west) -- (mux_s.west);
     \draw[control bus] ([xshift=1.25cm, yshift=-.5cm]mux_td.west) -| node[pos=0.5, above right] {\footnotesize select} (mux_td.west);
     \draw[data bus] (mux_td.south) -- (td.west);
     \draw[data bus] (mux_s.south) -- (s.west);

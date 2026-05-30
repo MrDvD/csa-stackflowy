@@ -70,7 +70,8 @@
     \draw[data bus] (ir_3.west) -- (ir_2.east);
     \draw[data bus] (ir_4.west) -- (ir_3.east);
     \draw[data bus] (ir_1.south) -- (ir.north);
-    \draw[data bus] (i_prefetch.west) -- node[pos=0.02, above left] {\footnotesize high byte} (ir_4.east);
+    \draw[data bus] (i_prefetch.165) -- node[pos=0.02, above left] {\footnotesize high byte} (ir_4.east |- i_prefetch.165);
+    \draw[control bus] ([xshift=-1.25cm]i_prefetch.195) -- node[pos=0.98, above left] {\footnotesize select} (i_prefetch.195);
     \draw[control bus] ([xshift=-.5cm, yshift=-3.5cm]ir.west) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} node[pos=0.5, dot] (ir_branch) {} (ir.west);
     \draw[control bus] (ir_branch) |- ([yshift=1.15cm]ir_1.north) node[dot] (ir_1_branch) {} -- (ir_1.north);
     \draw[control bus] (ir_1_branch) -| node[pos=0.5, dot] (ir_2_branch) {} (ir_2.north);

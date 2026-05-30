@@ -21,7 +21,7 @@ class Opcode(Enum):
   SHLT = (0xB, "shift_left")
   SHRT = (0xC, "shift_right")
   INV  = (0xD, "invert")
-  NEG  = (0xE, "negative")
+  NEG  = (0xE, "negate")
 
   EQ   = (0xF, "is_==")
   GT   = (0x10, "is_>")
