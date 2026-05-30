@@ -19,10 +19,11 @@ _print_loop:
     ( char : char, char )
     ( : 0 )
     ( char, zero : char == zero )
-    ( : 1 ) ; load constant port number
-    ( is_null, port_num : port_num, is_null ) => ? _print_done
+    ( : 1 )       ; load constant port number
+    ( is_null, port_num : port_num, is_null )
+    <? _print_done>
     ( char, port_num : ) => OUT
-    ( : ) => _print_loop
+    <_print_loop>
 _print_done:
     ( addr : )
 }
@@ -30,6 +31,6 @@ _print_done:
     .text
 
 _main:
-    $PRINT_CSTR(500) ; using defined macros
+    $PRINT_CSTR(500)  ; using defined macros
     $PRINT_CSTR($WORLD_ADDR)
-    ( : ) => HALT
+    <...>

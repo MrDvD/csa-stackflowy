@@ -1,5 +1,9 @@
 temp/
 __pycache__
+.pytest_cache
+venv/
+.vscode/
+
 *.bin
 *.hex
 
