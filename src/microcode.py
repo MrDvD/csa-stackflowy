@@ -7,7 +7,7 @@ from datapath import MuxTdSel, MuxSSel, MuxDataReadSel, MuxSrSel, AluOp
 def generate_microprogram() -> Tuple[
     List[MicroInstruction], Dict[Tuple[Opcode, int], int]
 ]:
-    mprogram: List[MicroInstruction] = []
+    mprogram: List[MicroInstruction] = list()
     state_decoder_map: Dict[Tuple[Opcode, int], int] = dict()
 
     def add_instruction(inst: MicroInstruction) -> int:
@@ -36,9 +36,9 @@ def generate_microprogram() -> Tuple[
     state_decoder_map[(Opcode.PUSH, 0)] = add_instruction(
         MicroInstruction(
             latch_td=True,
-            select_td=MuxTdSel.NIR,
+            select_td=MuxTdSel.I_PREFETCH,
             latch_s=True,
-            select_s=MuxSSel.TD_SHIFT,
+            select_s=MuxSSel.NEXT,
             data_stack_push=True,
             latch_pc=True,
             select_pc=MuxPcSel.PC_PLUS_4,
@@ -99,7 +99,7 @@ def generate_microprogram() -> Tuple[
         MicroInstruction(
             latch_td=True,
             select_td=MuxTdSel.DATA_READ,
-            select_data_read=MuxDataReadSel.RAM,
+            select_data_read=MuxDataReadSel.MEM_DATA,
             select_mpc=MuxMpcSel.STATE_DECODER,
             latch_mpc=True,
         )
@@ -107,7 +107,7 @@ def generate_microprogram() -> Tuple[
 
     state_decoder_map[(Opcode.STORE, 0)] = add_instruction(
         MicroInstruction(
-            write_memory=True,
+            memory_write=True,
             latch_s=True,
             select_s=MuxSSel.STACK_PREV,
             latch_td=True,
@@ -129,7 +129,7 @@ def generate_microprogram() -> Tuple[
 
     state_decoder_map[(Opcode.OUT, 0)] = add_instruction(
         MicroInstruction(
-            write_io=True,
+            io_write=True,
             latch_s=True,
             select_s=MuxSSel.STACK_PREV,
             latch_td=True,

@@ -23,8 +23,8 @@ class Processor:
 
     def load_data(self, data_code: bytes) -> None:
         for idx, byte in enumerate(data_code):
-            if idx < len(self.data_path.memory):
-                self.data_path.memory[idx] = byte
+            if idx < len(self.data_path.data_memory):
+                self.data_path.data_memory[idx] = byte
 
     def run(self, limit: int) -> tuple[str, int]:
         logging.debug("%s", self.control_unit)

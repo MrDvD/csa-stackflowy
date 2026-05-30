@@ -11,6 +11,7 @@ from datapath import (
     AluOp,
 )
 from typing import List, Dict, Tuple
+from dataclasses import dataclass
 
 
 class MuxPcSel(Enum):
@@ -30,61 +31,47 @@ class MuxMpcSel(Enum):
     STATE_DECODER = 1
 
 
-class MuxICounterSel(Enum):
-    ZERO = 0
-    INC = 1
+class MuxIPrefetch(Enum):
+    PREV = 0
+    CACHE = 1
 
 
+class MuxRStack(Enum):
+    PREV = 0
+    NEXT = 1
+
+
+@dataclass
 class MicroInstruction:
-    def __init__(
-        self,
-        select_pc: MuxPcSel = MuxPcSel.PC_PLUS_1,
-        latch_pc: bool = False,
-        select_tr: MuxTrSel = MuxTrSel.PC,
-        latch_tr: bool = False,
-        latch_r_stack: bool = False,
-        r_stack_push: bool = False,
-        latch_ir: bool = False,
-        select_mpc: MuxMpcSel = MuxMpcSel.MPC_PLUS_1,
-        latch_mpc: bool = False,
-        latch_mr: bool = False,
-        latch_td: bool = False,
-        select_td: MuxTdSel = MuxTdSel.ALU_RESULT,
-        latch_s: bool = False,
-        select_s: MuxSSel = MuxSSel.TD_SHIFT,
-        latch_sr: bool = False,
-        select_sr: MuxSrSel = MuxSrSel.ALU_RESULT,
-        alu_op: AluOp = AluOp.ADD,
-        alu_l_sel: MuxAluLeftSel = MuxAluLeftSel.S,
-        alu_r_sel: MuxAluRightSel = MuxAluRightSel.TD,
-        select_data_read: MuxDataReadSel = MuxDataReadSel.RAM,
-        data_stack_push: bool = False,
-        write_memory: bool = False,
-        write_io: bool = False,
-    ):
-        self.select_pc: MuxPcSel = select_pc
-        self.latch_pc: bool = latch_pc
-        self.select_tr: MuxTrSel = select_tr
-        self.latch_tr: bool = latch_tr
-        self.latch_r_stack: bool = latch_r_stack
-        self.r_stack_push: bool = r_stack_push
-        self.latch_ir: bool = latch_ir
-        self.select_mpc: MuxMpcSel = select_mpc
-        self.latch_mpc: bool = latch_mpc
-        self.latch_mr: bool = latch_mr
-        self.latch_td: bool = latch_td
-        self.select_td: MuxTdSel = select_td
-        self.latch_s: bool = latch_s
-        self.select_s: MuxSSel = select_s
-        self.latch_sr: bool = latch_sr
-        self.select_sr: MuxSrSel = select_sr
-        self.alu_op: AluOp = alu_op
-        self.alu_l_sel: MuxAluLeftSel = alu_l_sel
-        self.alu_r_sel: MuxAluRightSel = alu_r_sel
-        self.select_data_read: MuxDataReadSel = select_data_read
-        self.data_stack_push: bool = data_stack_push
-        self.write_memory: bool = write_memory
-        self.write_io: bool = write_io
+    alu_op: AluOp = AluOp.ADD
+    alu_l_sel: MuxAluLeftSel = MuxAluLeftSel.S
+    alu_r_sel: MuxAluRightSel = MuxAluRightSel.TD
+    latch_d_stack: bool = False
+    latch_s: bool = False
+    latch_td: bool = False
+    select_s: MuxSSel = MuxSSel.NEXT
+    select_td: MuxTdSel = MuxTdSel.ALU_RESULT
+    latch_r_stack: bool = False
+    latch_tr: bool = False
+    select_r_stack: MuxRStack = MuxRStack.PREV
+    select_tr: MuxTrSel = MuxTrSel.PC
+    latch_pc: bool = False
+    select_pc: MuxPcSel = MuxPcSel.PC_PLUS_1
+    latch_sr: bool = False
+    select_sr: MuxSrSel = MuxSrSel.ALU_RESULT
+    memory_d_output: bool = False
+    memory_i_output: bool = False
+    memory_d_write: bool = False
+    cache_i_write: bool = False
+    io_output: bool = False
+    io_write: bool = False
+    select_data_read: MuxDataReadSel = MuxDataReadSel.MEM_DATA
+    latch_ir: bool = False
+    select_i_prefetch: MuxIPrefetch = MuxIPrefetch.PREV
+    latch_mpc: bool = False
+    latch_mr: bool = False
+    micromem_output: bool = False
+    select_mpc: MuxMpcSel = MuxMpcSel.MPC_PLUS_1
 
 
 class ControlUnit:
@@ -130,86 +117,126 @@ class ControlUnit:
         if state in self.state_decoder_map:
             return self.state_decoder_map[state]
         raise Exception("Unknown state occurred")
+    
+    def latch_r_stack(self, sel: MuxRStack) -> List[int]:
+        next_r_stack: List[int] = list()
+        match sel:
+            case MuxRStack.NEXT:
+                next_r_stack = self.return_stack[1:]
+                next_r_stack.append(self.tr)
+            case MuxRStack.PREV:
+                next_r_stack = [self.return_stack[1], *self.return_stack]
+                next_r_stack.pop()
+            case _:
+                raise Exception("Unknown MuxRStack selector")
+        return next_r_stack
+    
+    def latch_tr(self, sel: MuxTrSel) -> int:
+        match sel:
+            case MuxTrSel.PC:
+                return self.pc
+            case MuxTrSel.STACK_PREV:
+                return self.return_stack[-1]
+            case _:
+                raise Exception("Unknown MuxTr selector")
+    
+    def latch_pc(self, sel: MuxPcSel) -> int:
+        match sel:
+            case MuxPcSel.I_PREFETCH:
+                return self._get_prefetch_value()
+            case MuxPcSel.PC_PLUS_1:
+                return self.pc + 1
+            case MuxPcSel.PC_PLUS_4:
+                return self.pc + 4
+            case MuxPcSel.TR:
+                return self.tr
+            case _:
+                raise Exception("Unknown MuxPC selector")
+    
+    def latch_ir(self) -> int:
+        return self.prefetch_buffer[3]
+    
+    def latch_mpc(self, sel: MuxMpcSel) -> int:
+        match sel:
+            case MuxMpcSel.MPC_PLUS_1:
+                return self.mpc + 1
+            case MuxMpcSel.STATE_DECODER:
+                return self._decode_state()
+            case _:
+                raise Exception("Unknown MuxMpc selector")
+    
+    def latch_mr(self) -> MicroInstruction:
+        return self.mprogram[self.mpc % len(self.mprogram)]
 
     def tick(self) -> None:
-        next_uinst: MicroInstruction = self.mprogram[self.mpc % len(self.mprogram)]
+        next_mr: MicroInstruction = self.mr
+        if self.mr.latch_mr:
+            next_mr = self.latch_mr()
 
-        if self.mr.latch_mpc:
-            self.mr = next_uinst
+        next_d_stack: List[int] = self.data_path.data_stack
+        if self.mr.latch_d_stack:
+            next_d_stack = self.data_path.latch_d_stack(self.mr.select_s)
 
-        if self.mr.data_stack_push:
-            self.data_path.stack_push()
-
+        next_td: int = self.data_path.td
         if self.mr.latch_td:
-            self.data_path.latch_td(
+            next_td = self.data_path.latch_td(
                 self.mr.select_td,
+                self.mr.alu_l_sel,
+                self.mr.alu_r_sel,
                 self.mr.select_data_read,
                 self.mr.alu_op,
                 self._get_prefetch_value(),
             )
 
+        next_s: int = self.data_path.s
         if self.mr.latch_s:
-            self.data_path.latch_s(self.mr.select_s)
+            next_s = self.data_path.latch_s(self.mr.select_s)
 
+        next_sr_v: bool = self.data_path.sr_v
+        next_sr_c: bool = self.data_path.sr_c
         if self.mr.latch_sr:
-            self.data_path.latch_sr(
+            next_sr_v, next_sr_c = self.data_path.latch_sr(
                 self.mr.select_sr, self.mr.alu_op, self.mr.alu_l_sel, self.mr.alu_r_sel
             )
 
-        if self.mr.write_memory:
-            self.data_path.write_memory()
+        if self.mr.memory_d_write:
+            self.data_path.memory_d_write()
 
-        if self.mr.write_io:
-            self.data_path.write_io()
+        if self.mr.io_write:
+            self.data_path.io_write()
 
         next_pc: int = self.pc
         if self.mr.latch_pc:
-            match self.mr.select_pc:
-                case MuxPcSel.I_PREFETCH:
-                    next_pc = self._get_prefetch_value()
-                case MuxPcSel.PC_PLUS_1:
-                    next_pc = self.pc + 1
-                case MuxPcSel.PC_PLUS_4:
-                    next_pc = self.pc + 4
-                case MuxPcSel.TR:
-                    next_pc = self.tr
-                case _:
-                    raise Exception("Unknown MuxPC selector")
+            next_pc = self.latch_pc(self.mr.select_pc)
 
         next_tr: int = self.tr
         if self.mr.latch_tr:
-            match self.mr.select_tr:
-                case MuxTrSel.PC:
-                    next_tr = self.pc
-                case MuxTrSel.STACK_PREV:
-                    next_tr = self.return_stack[-1]
+            next_tr = self.latch_tr(self.mr.select_tr)
 
+        next_r_stack: List[int] = self.return_stack
         if self.mr.latch_r_stack:
-            if self.mr.r_stack_push:
-                self.return_stack = self.return_stack[1:]
-                self.return_stack.append(self.tr)
-            else:
-                self.return_stack = [self.return_stack[1], *self.return_stack]
-                self.return_stack.pop()
+            next_r_stack = self.latch_r_stack(self.mr.select_r_stack)
 
         if self.pc not in self.cache_instructions:
             self.cache_instructions[self.pc] = self._read_instruction_rom(self.pc)
 
+        next_ir: int = self.ir
         if self.mr.latch_ir:
-            high_byte: int = self.prefetch_buffer[3]
-            self.ir = high_byte
+            next_ir = self.latch_ir()
 
         next_mpc: int = self.mpc
         if self.mr.latch_mpc:
-            match self.mr.select_mpc:
-                case MuxMpcSel.MPC_PLUS_1:
-                    next_mpc = self.mpc + 1
-                case MuxMpcSel.STATE_DECODER:
-                    next_mpc = self._decode_state()
-                case _:
-                    raise Exception("Unknown MuxMpc selector")
+            next_mpc = self.latch_mpc(self.mr.select_mpc)
 
         self.pc = next_pc
         self.tr = next_tr
         self.mpc = next_mpc
+        self.return_stack = next_r_stack
+        self.ir = next_ir
+        self.mr = next_mr
+        self.data_path.s = next_s
+        self.data_path.data_stack = next_d_stack
+        self.data_path.sr_v = next_sr_v
+        self.data_path.sr_c = next_sr_c
+        self.data_path.td = next_td
         self.model_tick += 1
