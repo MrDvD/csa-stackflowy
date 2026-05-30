@@ -59,7 +59,7 @@
     \draw[data bus] (data_in_branch) -| node[pos=0.98, above left, rotate=90] {\footnotesize data in} ([xshift=1cm]io.30) -- (io.30);
     \draw[data bus] (s_shift_branch) -| ([xshift=-1cm]mux_td.140) -- (mux_td.140);
     \draw[data bus] (td_shift_branch) -| ([xshift=-.25cm]mux_s.130) -- (mux_s.130);
-    \draw[data bus] ([xshift=-.5cm,yshift=1cm]mux_td.40) |- node[pos=0.02, below left, rotate=90] {\footnotesize NIR} (mux_td.40);
+    \draw[data bus] ([xshift=-.5cm,yshift=1cm]mux_td.40) |- node[pos=0.5, below right, rotate=90] {\footnotesize IPref} (mux_td.40);
 
     % ALU
     \draw[data bus] (mux_alu_left.south) -- (mux_alu_left.south |- alu.north);
