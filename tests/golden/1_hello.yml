@@ -37,7 +37,7 @@ in_source: |-
       <...>
 in_stdin: |-
 data_memory_size: 5000
-limit: 1000
+limit: 100
 out_data: !!binary |
   UAAAAHAAAAVAAAAAUAAAAGAAAAGAAAAA
 out_data_hex: |

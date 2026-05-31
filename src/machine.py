@@ -27,22 +27,30 @@ class Processor:
                 self.data_path.data_memory[idx] = byte
 
     def run(self, limit: int) -> tuple[str, int]:
-        logging.debug("%s", self.control_unit)
+        model_tick: int = 0
         try:
-            while self.control_unit.model_tick < limit and not self.control_unit.halted:
-                self.control_unit.tick()
+            while model_tick < limit and self.control_unit.mr.latch_mr:
+                stalled = self.control_unit.tick()
+                logging.debug(
+                    "TICK: %d STALLED: [%s] mPC: %d MR: %s",
+                    model_tick,
+                    "+" if stalled else " ",
+                    self.control_unit.mpc,
+                    self.control_unit.mr,
+                )
                 logging.debug("%s", self.control_unit)
+                model_tick += 1
         except EOFError:
             logging.warning("Input buffer is empty!")
         except StopIteration:
             pass
 
-        if self.control_unit.model_tick >= limit:
+        if model_tick >= limit:
             logging.warning("Limit exceeded!")
 
         output: str = "".join(map(str, self.data_path.output_buffer))
         logging.info("output_buffer: %s", repr(output))
-        return output, self.control_unit.model_tick
+        return output, model_tick
 
 
 def main(

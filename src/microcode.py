@@ -1,7 +1,89 @@
 from typing import List, Dict, Tuple
 from isa import Opcode
-from controlunit import MicroInstruction, MuxPcSel, MuxMpcSel
-from datapath import MuxTdSel, MuxSSel, MuxDataReadSel, MuxSrSel, AluOp
+from dataclasses import dataclass, fields
+from mux import (
+    MuxPcSel,
+    MuxTrSel,
+    MuxMpcSel,
+    MuxIPrefetch,
+    MuxRStack,
+    MuxTdSel,
+    MuxSSel,
+    MuxAluLeftSel,
+    MuxAluRightSel,
+    MuxDataReadSel,
+    MuxSrSel,
+    AluOp,
+)
+
+
+@dataclass
+class MicroInstruction:
+    alu_op: AluOp = AluOp.ADD
+    alu_l_sel: MuxAluLeftSel = MuxAluLeftSel.S
+    alu_r_sel: MuxAluRightSel = MuxAluRightSel.TD
+    latch_d_stack: bool = False
+    latch_s: bool = False
+    latch_td: bool = False
+    select_s: MuxSSel = MuxSSel.NEXT
+    select_td: MuxTdSel = MuxTdSel.ALU_RESULT
+    latch_r_stack: bool = False
+    latch_tr: bool = False
+    select_r_stack: MuxRStack = MuxRStack.PREV
+    select_tr: MuxTrSel = MuxTrSel.PC
+    latch_pc: bool = False
+    select_pc: MuxPcSel = MuxPcSel.PC_PLUS_1
+    latch_sr: bool = False
+    select_sr: MuxSrSel = MuxSrSel.ALU_RESULT
+    memory_d_output: bool = False
+    memory_i_output: bool = False
+    memory_d_write: bool = False
+    cache_i_write: bool = False
+    io_output: bool = False
+    io_write: bool = False
+    select_data_read: MuxDataReadSel = MuxDataReadSel.MEM_DATA
+    latch_ir: bool = False
+    latch_i_prefetch: bool = False
+    select_i_prefetch: MuxIPrefetch = MuxIPrefetch.PREV
+    latch_mpc: bool = True
+    latch_mr: bool = True
+    micromem_output: bool = True
+    select_mpc: MuxMpcSel = MuxMpcSel.STATE_DECODER
+
+    def _get_str(self) -> str:
+        active_signals: List[str] = list()
+
+        for field in fields(self):
+            current_value = getattr(self, field.name)
+            default_value = field.default
+
+            if current_value != default_value:
+                if isinstance(current_value, bool):
+                    if current_value:
+                        active_signals.append(f"{field.name.upper()}")
+                    else:
+                        active_signals.append(f"NOT_{field.name.upper()}")
+                else:
+                    val_str = (
+                        current_value.name
+                        if hasattr(current_value, "name")
+                        else str(current_value)
+                    )
+                    active_signals.append(f"{field.name.upper()}: {val_str}")
+
+        if not active_signals:
+            return "[DEFAULT]"
+
+        return f"[ {' | '.join(active_signals)} ]"
+
+    def __str__(self) -> str:
+        return self._get_str()
+
+    def __repr__(self) -> str:
+        return self._get_str()
+
+
+cache_miss_mpc_addr = 0
 
 
 def generate_microprogram() -> Tuple[
@@ -14,129 +96,73 @@ def generate_microprogram() -> Tuple[
         mprogram.append(inst)
         return len(mprogram) - 1
 
-    # fetch_idx = add_instruction(MicroInstruction(
-    #   latch_ir_pipeline=True,
-    #   latch_pc=True,
-    #   select_pc=MuxPcSel.PC_PLUS_1,
-    #   select_mpc=MuxMpcSel.STATE_DECODER,
-    #   latch_mpc=True
-    # ))
+    def reg_state(opcode: Opcode, start_idx: int) -> None:
+        for i in range(4):
+            state_decoder_map[(opcode, i)] = start_idx
 
-    state_decoder_map[(Opcode.NOP, 0)] = add_instruction(
-        MicroInstruction(
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
+    fetch_argument = MicroInstruction(
+        select_i_prefetch=MuxIPrefetch.CACHE_ARG,
+        latch_i_prefetch=True,
+        select_mpc=MuxMpcSel.MPC_PLUS_1,
+    )
+    goto_start = MicroInstruction(select_mpc=MuxMpcSel.START)
+
+    # start of the mprogram
+    add_instruction(
+        MicroInstruction(  # fill i_prefetch if needed
+            select_i_prefetch=MuxIPrefetch.CACHE,
+            latch_i_prefetch=True,
+            select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
-
-    state_decoder_map[(Opcode.HLT, 0)] = add_instruction(
-        MicroInstruction(latch_mpc=False)
-    )
-
-    state_decoder_map[(Opcode.PUSH, 0)] = add_instruction(
-        MicroInstruction(
-            latch_td=True,
-            select_td=MuxTdSel.I_PREFETCH,
-            latch_s=True,
-            select_s=MuxSSel.NEXT,
-            data_stack_push=True,
+    add_instruction(
+        MicroInstruction(  # fetch instruction
             latch_pc=True,
-            select_pc=MuxPcSel.PC_PLUS_4,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
+            latch_ir=True,
+            latch_i_prefetch=True,
+            select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
+    add_instruction(MicroInstruction())  # decode address of next instruction
 
-    state_decoder_map[(Opcode.POP, 0)] = add_instruction(
-        MicroInstruction(
-            latch_s=True,
-            select_s=MuxSSel.STACK_PREV,
-            latch_td=True,
-            select_td=MuxTdSel.S_SHIFT,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
-        )
-    )
-
-    state_decoder_map[(Opcode.ADD, 0)] = add_instruction(
-        MicroInstruction(
-            latch_td=True,
-            select_td=MuxTdSel.ALU_RESULT,
-            alu_op=AluOp.ADD,
-            latch_s=True,
-            select_s=MuxSSel.STACK_PREV,
-            latch_sr=True,
-            select_sr=MuxSrSel.ALU_FLAGS,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
-        )
-    )
-
-    state_decoder_map[(Opcode.SUB, 0)] = add_instruction(
-        MicroInstruction(
-            latch_td=True,
-            select_td=MuxTdSel.ALU_RESULT,
-            alu_op=AluOp.SUB,
-            latch_s=True,
-            select_s=MuxSSel.STACK_PREV,
-            latch_sr=True,
-            select_sr=MuxSrSel.ALU_FLAGS,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
-        )
-    )
-
-    state_decoder_map[(Opcode.JMP, 0)] = add_instruction(
+    ### JUMP
+    idx = add_instruction(fetch_argument)
+    add_instruction(
         MicroInstruction(
             latch_pc=True,
             select_pc=MuxPcSel.I_PREFETCH,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
+            select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
+    add_instruction(goto_start)
+    reg_state(Opcode.JMP, idx)
 
-    state_decoder_map[(Opcode.LOAD, 0)] = add_instruction(
+    ### PUSH
+    idx = add_instruction(fetch_argument)
+    add_instruction(
         MicroInstruction(
             latch_td=True,
-            select_td=MuxTdSel.DATA_READ,
-            select_data_read=MuxDataReadSel.MEM_DATA,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
+            select_td=MuxTdSel.I_PREFETCH,
+            latch_d_stack=True,
+            latch_pc=True,
+            select_pc=MuxPcSel.PC_PLUS_4,
+            select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
+    add_instruction(goto_start)
+    reg_state(Opcode.PUSH, idx)
 
-    state_decoder_map[(Opcode.STORE, 0)] = add_instruction(
+    ### DUP
+    idx = add_instruction(
         MicroInstruction(
-            memory_write=True,
             latch_s=True,
-            select_s=MuxSSel.STACK_PREV,
-            latch_td=True,
-            select_td=MuxTdSel.S_SHIFT,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
+            select_s=MuxSSel.NEXT,
+            latch_d_stack=True,
+            latch_pc=True,
+            select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
-
-    state_decoder_map[(Opcode.IN, 0)] = add_instruction(
-        MicroInstruction(
-            latch_td=True,
-            select_td=MuxTdSel.DATA_READ,
-            select_data_read=MuxDataReadSel.IO,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
-        )
-    )
-
-    state_decoder_map[(Opcode.OUT, 0)] = add_instruction(
-        MicroInstruction(
-            io_write=True,
-            latch_s=True,
-            select_s=MuxSSel.STACK_PREV,
-            latch_td=True,
-            select_td=MuxTdSel.S_SHIFT,
-            select_mpc=MuxMpcSel.STATE_DECODER,
-            latch_mpc=True,
-        )
-    )
+    add_instruction(goto_start)
+    reg_state(Opcode.DUP, idx)
 
     return mprogram, state_decoder_map

@@ -11,7 +11,7 @@
 
 \begin{center}
   \begin{adjustbox}{max width=\textwidth, max height=0.99\textheight}
-  \begin{tikzpicture}[processor arch, scale=1.6, transform shape]
+  \begin{tikzpicture}[processor arch, scale=1.59, transform shape]
     \node[memory, minimum height=6cm] (mem) {Memory:\\ \textit{Instructions} \\ \textit{(ROM)}};
     \node[memory, minimum height=2cm, anchor=south, yshift=1cm] at (mem.north) (cache) {Cache:\\ \textit{Instructions}};
     \node[register, anchor=south, yshift=1cm] at (cache.north) (i_prefetch) {Prefetch:\\ \textit{Instructions}};
@@ -60,8 +60,10 @@
 
     % IR/NIR
     \draw[data bus] (i_prefetch.165) -- node[pos=0.02, above left] {\footnotesize high byte} (ir.east |- i_prefetch.165);
-    \draw[control bus] ([xshift=.5cm, yshift=-1.25cm]i_prefetch.east) |- node[pos=0.5, above left, rotate=90] {\footnotesize select} (i_prefetch.east);
+    \draw[control bus] ([xshift=.75cm, yshift=-1.75cm]i_prefetch.-20) |- node[pos=0.5, above left, rotate=90] {\footnotesize select latch} (i_prefetch.-20);
+    \draw[control bus] ([xshift=1.25cm, yshift=-1.75cm]i_prefetch.20) |- node[pos=0.5, above left, rotate=90] {\footnotesize select mode} (i_prefetch.20);
     \draw[control bus] ([xshift=-.25cm, yshift=-1cm]ir.west) |- node[pos=0.02, above right, rotate=90] {\footnotesize latch} (ir.west);
+    \draw[control bus] ([xshift=-2.25cm]i_prefetch.west) -- node[pos=0, below right] {\footnotesize latch} (i_prefetch.west);
 
     % State Decoder
     \draw[data bus] (ir.south) -- (s_decoder.north);

@@ -1,56 +1,13 @@
-from enum import Enum
 from typing import List, Tuple
-
-
-class MuxTdSel(Enum):
-    DATA_READ = 0
-    S_SHIFT = 1
-    ALU_RESULT = 2
-    I_PREFETCH = 3
-
-
-class MuxSSel(Enum):
-    PREV = 0
-    NEXT = 1
-
-
-class MuxAluLeftSel(Enum):
-    S = 0
-    ZERO = 1
-
-
-class MuxAluRightSel(Enum):
-    TD = 0
-    SR = 1
-
-
-class MuxDataReadSel(Enum):
-    MEM_DATA = 0
-    IO = 1
-
-
-class MuxSrSel(Enum):
-    ALU_RESULT = 0
-    ALU_FLAGS = 1
-
-
-class AluOp(Enum):
-    ADD = 0x0
-    SUB = 0x1
-    MUL = 0x2
-    DIV = 0x3
-    NEG = 0x4
-    AND = 0x5
-    OR = 0x6
-    XOR = 0x7
-    NOT = 0x8
-    SHLT = 0x9
-    SHRT = 0xA
-    EQ = 0xB
-    GT = 0xC
-    LT = 0xD
-    GEQ = 0xE
-    LEQ = 0xF
+from mux import (
+    MuxDataReadSel,
+    MuxAluLeftSel,
+    MuxAluRightSel,
+    MuxSrSel,
+    MuxSSel,
+    MuxTdSel,
+    AluOp,
+)
 
 
 class DataPath:
@@ -64,14 +21,51 @@ class DataPath:
         self.sr_v: bool = False
         self.sr_c: bool = False
 
-    def _read_data_mux(self, sel: MuxDataReadSel) -> int:
+        self.ram_countdown: int = 0
+        self.ram_busy: bool = False
+
+        self.io_countdown: int = 0
+        self.io_busy: bool = False
+
+    @property
+    def ram_ready(self) -> bool:
+        return self.ram_countdown == 0 if self.ram_busy else True
+
+    @property
+    def io_ready(self) -> bool:
+        if self.io_busy:
+            return self.io_countdown == 0 and len(self.input_buffer) > 0
+        return len(self.input_buffer) > 0
+
+    def tick_hardware(self, memory_d_output: bool, io_output: bool) -> None:
+        if memory_d_output and not self.ram_busy:
+            self.ram_countdown = 2
+            self.ram_busy = True
+        elif self.ram_busy and self.ram_countdown > 0:
+            self.ram_countdown -= 1
+
+        if io_output and not self.io_busy and len(self.input_buffer) > 0:
+            self.io_countdown = 10
+            self.io_busy = True
+        elif self.io_busy and self.io_countdown > 0:
+            self.io_countdown -= 1
+
+    def _read_data_mux(
+        self, sel: MuxDataReadSel, memory_d_output: bool, io_output: bool
+    ) -> int:
         match sel:
             case MuxDataReadSel.MEM_DATA:
-                return self.data_memory[self.td % len(self.data_memory)]
+                if memory_d_output and self.ram_ready:
+                    self.ram_busy = False
+                    return self.data_memory[self.td % len(self.data_memory)]
+                return 0
             case MuxDataReadSel.IO:
-                if self.input_buffer:
-                    return self.input_buffer.pop(0)
-                raise Exception("Input buffer is empty")
+                if io_output and self.io_ready:
+                    self.io_busy = False
+                    if self.input_buffer:
+                        return self.input_buffer.pop(0)
+                    raise Exception("Input buffer is empty")
+                return 0
             case _:
                 raise Exception("Unknown DataReadMux selector")
 
@@ -189,6 +183,8 @@ class DataPath:
         alu_l_sel: MuxAluLeftSel,
         alu_r_sel: MuxAluRightSel,
         dr_sel: MuxDataReadSel = MuxDataReadSel.MEM_DATA,
+        memory_d_output: bool = False,
+        io_output: bool = False,
         alu_op: AluOp = AluOp.ADD,
         ifetch_val: int = 0,
     ) -> int:
@@ -197,7 +193,7 @@ class DataPath:
 
         match sel:
             case MuxTdSel.DATA_READ:
-                return self._read_data_mux(dr_sel)
+                return self._read_data_mux(dr_sel, memory_d_output, io_output)
             case MuxTdSel.S_SHIFT:
                 return self.s
             case MuxTdSel.ALU_RESULT:
