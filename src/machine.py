@@ -40,6 +40,8 @@ class Processor:
                 )
                 logging.debug("%s", self.control_unit)
                 model_tick += 1
+                if model_tick == 47:
+                    continue
         except EOFError:
             logging.warning("Input buffer is empty!")
         except StopIteration:

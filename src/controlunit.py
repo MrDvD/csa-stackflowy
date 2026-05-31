@@ -1,6 +1,6 @@
 from isa import Opcode
 from datapath import DataPath
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from dataclasses import dataclass
 from microcode import MicroInstruction
 import microcode
@@ -25,13 +25,13 @@ class ControlUnit:
         self,
         mem_size: int,
         mprogram: List[MicroInstruction],
-        state_decoder_map: Dict[Tuple[Opcode, int], int],
+        state_decoder_map: Dict[Opcode, int],
         data_path: DataPath,
     ):
         self.rom_instructions: List[int] = [0] * mem_size
         self.i_cache: List[CacheLine] = [CacheLine() for _ in range(16)]
         self.mprogram: List[MicroInstruction] = mprogram
-        self.state_decoder_map: Dict[Tuple[Opcode, int], int] = state_decoder_map
+        self.state_decoder_map: Dict[Opcode, int] = state_decoder_map
         self.data_path: DataPath = data_path
 
         self.pc: int = 0
@@ -84,7 +84,7 @@ class ControlUnit:
     def _decode_state(self) -> int:
         if not self._is_cache_hit():
             return microcode.cache_miss_mpc_addr
-        state = (Opcode(self.ir), self.pc & 0x3)
+        state = Opcode(self.ir)
         if state in self.state_decoder_map:
             return self.state_decoder_map[state]
         raise Exception("Unknown state occurred")
@@ -142,7 +142,7 @@ class ControlUnit:
         mpc = self.mpc
         return self.mprogram[mpc % len(self.mprogram)]
 
-    def cache_write(self) -> List[CacheLine]:
+    def cache_write(self) -> None:
         match self.mr.select_i_prefetch:
             case MuxIPrefetch.CACHE:
                 pc = self.pc
@@ -150,12 +150,10 @@ class ControlUnit:
                 pc = self.pc + 3
             case _:
                 raise Exception("Incorrect state: cache is not requested")
-        next_i_cache = self.i_cache
         word = self._read_i_memory()
         index = (pc >> 2) & 0xF
         tag = pc >> 6
-        next_i_cache[index] = CacheLine(True, tag, word)
-        return next_i_cache
+        self.i_cache[index] = CacheLine(True, tag, word)
 
     def latch_i_prefetch(self, sel: MuxIPrefetch) -> List[int]:
         offset = self.pc & 0x3
@@ -239,7 +237,7 @@ class ControlUnit:
         if memory_i_output and rom_ready:
             self.cache_write()
             self.rom_busy = False
-            return False
+            return True
 
         next_i_prefetch: List[int] = list(self.i_prefetch)
         if self.mr.latch_i_prefetch:

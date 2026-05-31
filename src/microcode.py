@@ -86,19 +86,16 @@ class MicroInstruction:
 cache_miss_mpc_addr = 0
 
 
-def generate_microprogram() -> Tuple[
-    List[MicroInstruction], Dict[Tuple[Opcode, int], int]
-]:
+def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
     mprogram: List[MicroInstruction] = list()
-    state_decoder_map: Dict[Tuple[Opcode, int], int] = dict()
+    state_decoder_map: Dict[Opcode, int] = dict()
 
     def add_instruction(inst: MicroInstruction) -> int:
         mprogram.append(inst)
         return len(mprogram) - 1
 
     def reg_state(opcode: Opcode, start_idx: int) -> None:
-        for i in range(4):
-            state_decoder_map[(opcode, i)] = start_idx
+        state_decoder_map[opcode] = start_idx
 
     fetch_argument = MicroInstruction(
         select_i_prefetch=MuxIPrefetch.CACHE_ARG,
@@ -158,7 +155,6 @@ def generate_microprogram() -> Tuple[
             latch_s=True,
             select_s=MuxSSel.NEXT,
             latch_d_stack=True,
-            latch_pc=True,
             select_mpc=MuxMpcSel.MPC_PLUS_1,
         )
     )
