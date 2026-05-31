@@ -47,15 +47,8 @@ class ControlUnit:
         self.rom_countdown: int = 0
         self.rom_busy: bool = False
 
-    def _read_i_memory(self) -> int:
-        match self.mr.select_i_prefetch:
-            case MuxIPrefetch.CACHE:
-                pc = self.pc
-            case MuxIPrefetch.CACHE_ARG:
-                pc = self.pc + 3
-            case _:
-                raise Exception("Incorrect state: cache is not requested")
-        base_pc = pc & ~3
+    def _read_i_memory(self, addr: int) -> int:
+        base_pc = addr & ~3
         idx = base_pc % len(self.rom_instructions)
         four_bytes = self.rom_instructions[idx : idx + 4]
         return int.from_bytes(four_bytes, byteorder="little")
@@ -69,11 +62,15 @@ class ControlUnit:
         )
 
     def _is_cache_hit(self) -> bool:
+        offset = self.pc & 0x3
         match self.mr.select_i_prefetch:
             case MuxIPrefetch.CACHE:
                 pc = self.pc
             case MuxIPrefetch.CACHE_ARG:
-                pc = self.pc + 3
+                if offset == 0:
+                    pc = self.pc
+                else:
+                    pc = self.pc + 4
             case _:
                 return True
         index = (pc >> 2) & 0xF
@@ -143,14 +140,18 @@ class ControlUnit:
         return self.mprogram[mpc % len(self.mprogram)]
 
     def cache_write(self) -> None:
+        offset = self.pc & 0x3
         match self.mr.select_i_prefetch:
             case MuxIPrefetch.CACHE:
                 pc = self.pc
             case MuxIPrefetch.CACHE_ARG:
-                pc = self.pc + 3
+                if offset == 0:
+                    pc = self.pc
+                else:
+                    pc = self.pc + 4
             case _:
                 raise Exception("Incorrect state: cache is not requested")
-        word = self._read_i_memory()
+        word = self._read_i_memory(pc)
         index = (pc >> 2) & 0xF
         tag = pc >> 6
         self.i_cache[index] = CacheLine(True, tag, word)
@@ -158,11 +159,10 @@ class ControlUnit:
     def latch_i_prefetch(self, sel: MuxIPrefetch) -> List[int]:
         offset = self.pc & 0x3
         latches = [i < (4 - offset) for i in range(4)]
-
+        next_i_prefetch = list(self.i_prefetch)
         match sel:
             case MuxIPrefetch.PREV:
                 possible_i_prefetch = [*self.i_prefetch[1:], 0]
-                next_i_prefetch = list(self.i_prefetch)
                 for i in range(4):
                     if latches[i]:
                         next_i_prefetch[i] = possible_i_prefetch[i]
@@ -175,32 +175,43 @@ class ControlUnit:
                         4, byteorder="little"
                     )
                 )
-
-                available_bytes = bytes_word[offset:]
-
-                next_i_prefetch = list(self.i_prefetch)
                 for i in range(4):
                     if latches[i]:
-                        next_i_prefetch[i] = available_bytes[i]
+                        next_i_prefetch[i] = bytes_word[offset + i]
 
                 return next_i_prefetch
             case MuxIPrefetch.CACHE_ARG:
-                latches = list(map(lambda x: not x, latches))
-                idx = ((self.pc + 3) >> 2) & 0xF
-                bytes_word = list(
-                    (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
-                        4, byteorder="little"
+                # offset == 00 -> [1, 1, 1, 1], [0, 0, 0, 0]
+                # offset == 01 -> [0, 1, 1, 1], [1, 0, 0, 0]
+                # offset == 10 -> [0, 0, 1, 1], [1, 1, 0, 0]
+                # offset == 11 -> [0, 0, 0, 1], [1, 1, 1, 0]
+                if offset == 0:
+                    idx = (self.pc >> 2) & 0xF
+                    bytes_word = list(
+                        (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
+                            4, byteorder="little"
+                        )
                     )
-                )
+                    for i in range(4):
+                        if latches[i]:
+                            next_i_prefetch[i] = bytes_word[offset + i]
 
-                available_bytes = bytes_word[::-1][4 - offset :]
+                    return next_i_prefetch
+                else:
+                    base_idx = (self.pc >> 2) & 0xF
+                    idx = (base_idx + 1) & 0xF
+                    latches = [not latch for latch in latches]
+                    bytes_word = list(
+                        (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
+                            4, byteorder="little"
+                        )
+                    )
+                    for i in range(4):
+                        if latches[i]:
+                            cache_idx = i - (4 - offset)
+                            next_i_prefetch[i] = bytes_word[cache_idx]
 
-                next_i_prefetch = list(self.i_prefetch)
-                for i in range(3, -1, -1):
-                    if latches[i]:
-                        next_i_prefetch[i] = available_bytes[3 - i]
-
-                return next_i_prefetch
+                    return next_i_prefetch
             case _:
                 raise Exception("Unknown MuxIPrefetch selector")
 
@@ -291,10 +302,6 @@ class ControlUnit:
         if self.mr.latch_r_stack:
             next_r_stack = self.latch_r_stack(self.mr.select_r_stack)
 
-        next_i_cache: List[CacheLine] = list(self.i_cache)
-        if self.mr.cache_i_write:
-            next_i_cache = self.cache_write()
-
         next_ir: int = self.ir
         if self.mr.latch_ir:
             next_ir = self.latch_ir()
@@ -309,7 +316,6 @@ class ControlUnit:
         self.return_stack = next_r_stack
         self.ir = next_ir
         self.i_prefetch = next_i_prefetch
-        self.i_cache = next_i_cache
         self.data_path.s = next_s
         self.data_path.data_stack = next_d_stack
         self.data_path.sr_v = next_sr_v
@@ -318,7 +324,7 @@ class ControlUnit:
         return False
 
     def _to_str(self) -> str:
-        return f"PC: {hex(self.pc)} IR: {hex(self.ir)} Td: {hex(self.data_path.td)} S: {hex(self.data_path.s)}"
+        return f"PC: {hex(self.pc)} IR: {Opcode(self.ir).mnemonic} Td: {hex(self.data_path.td)} S: {hex(self.data_path.s)}"
 
     def __str__(self) -> str:
         return self._to_str()

@@ -102,7 +102,6 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
         latch_i_prefetch=True,
         select_mpc=MuxMpcSel.MPC_PLUS_1,
     )
-    goto_start = MicroInstruction(select_mpc=MuxMpcSel.START)
 
     # start of the mprogram
     add_instruction(
@@ -128,10 +127,9 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
         MicroInstruction(
             latch_pc=True,
             select_pc=MuxPcSel.I_PREFETCH,
-            select_mpc=MuxMpcSel.MPC_PLUS_1,
+            select_mpc=MuxMpcSel.START,
         )
     )
-    add_instruction(goto_start)
     reg_state(Opcode.JMP, idx)
 
     ### PUSH
@@ -143,10 +141,9 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
             latch_d_stack=True,
             latch_pc=True,
             select_pc=MuxPcSel.PC_PLUS_4,
-            select_mpc=MuxMpcSel.MPC_PLUS_1,
+            select_mpc=MuxMpcSel.START,
         )
     )
-    add_instruction(goto_start)
     reg_state(Opcode.PUSH, idx)
 
     ### DUP
@@ -155,10 +152,23 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
             latch_s=True,
             select_s=MuxSSel.NEXT,
             latch_d_stack=True,
-            select_mpc=MuxMpcSel.MPC_PLUS_1,
+            select_mpc=MuxMpcSel.START,
         )
     )
-    add_instruction(goto_start)
     reg_state(Opcode.DUP, idx)
+
+    ### ADD
+    idx = add_instruction(
+        MicroInstruction(
+            latch_td=True,
+            latch_s=True,
+            latch_d_stack=True,
+            select_s=MuxSSel.PREV,
+            alu_op=AluOp.ADD,
+            select_td=MuxTdSel.ALU_RESULT,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.ADD, idx)
 
     return mprogram, state_decoder_map
