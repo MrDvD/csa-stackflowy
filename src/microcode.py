@@ -157,19 +157,37 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
     )
     reg_state(Opcode.DUP, idx)
 
-    ### ADD
-    idx = add_instruction(
-        MicroInstruction(
-            latch_td=True,
-            latch_s=True,
-            latch_d_stack=True,
-            select_s=MuxSSel.PREV,
-            alu_op=AluOp.ADD,
-            select_td=MuxTdSel.ALU_RESULT,
-            select_mpc=MuxMpcSel.START,
+    ### BINARY ALU OPERATIONS
+    def add_binary_op(opcode: Opcode, alu: AluOp) -> None:
+        idx = add_instruction(
+            MicroInstruction(
+                latch_td=True,
+                latch_s=True,
+                latch_d_stack=True,
+                select_s=MuxSSel.PREV,
+                alu_op=alu,
+                select_td=MuxTdSel.ALU_RESULT,
+                select_mpc=MuxMpcSel.START,
+            )
         )
-    )
-    reg_state(Opcode.ADD, idx)
+        reg_state(opcode, idx)
+
+    add_binary_op(Opcode.ADD, AluOp.ADD)
+    add_binary_op(Opcode.SUB, AluOp.SUB)
+    add_binary_op(Opcode.MUL, AluOp.MUL)
+    add_binary_op(Opcode.DIV, AluOp.DIV)
+    add_binary_op(Opcode.AND, AluOp.AND)
+    add_binary_op(Opcode.OR, AluOp.OR)
+    add_binary_op(Opcode.XOR, AluOp.XOR)
+    add_binary_op(Opcode.SHLT, AluOp.SHLT)
+    add_binary_op(Opcode.SHRT, AluOp.SHRT)
+    add_binary_op(Opcode.INV, AluOp.NOT)
+    add_binary_op(Opcode.NEG, AluOp.NEG)
+    add_binary_op(Opcode.EQ, AluOp.EQ)
+    add_binary_op(Opcode.GT, AluOp.GT)
+    add_binary_op(Opcode.LT, AluOp.LT)
+    add_binary_op(Opcode.GEQ, AluOp.GEQ)
+    add_binary_op(Opcode.LEQ, AluOp.LEQ)
 
     ### SWAP
     idx = add_instruction(
