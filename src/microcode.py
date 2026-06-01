@@ -204,12 +204,24 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     idx = add_instruction(
         MicroInstruction(
             latch_s=True,
-            select_s=MuxSSel.NEXT,
             latch_d_stack=True,
             select_mpc=MuxMpcSel.START,
         )
     )
     reg_state(Opcode.DUP, idx)
+
+    ### POP
+    idx = add_instruction(
+        MicroInstruction(
+            latch_td=True,
+            select_td=MuxTdSel.S,
+            latch_s=True,
+            select_s=MuxSSel.PREV,
+            latch_d_stack=True,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.POP, idx)
 
     ### BINARY ALU OPERATIONS
     def add_binary_op(opcode: Opcode, alu: AluOp) -> None:

@@ -52,8 +52,8 @@ class Processor:
         output: str = ""
         for port in range(4):
             io_device = self.data_path.io_devices[port]
-            io_output: str = "".join(map(str, io_device.output_buffer))
-            logging.info("output_buffer[%d]: %s", port, repr(io_output))
+            io_output: str = repr(io_device.output_buffer)
+            logging.info("output_buffer[%d]: %s", port, io_output)
             output += io_output + "\n"
         return output, model_tick
 
