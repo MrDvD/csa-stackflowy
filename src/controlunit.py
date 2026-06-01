@@ -2,8 +2,7 @@ from isa import Opcode
 from datapath import DataPath
 from typing import List, Dict
 from dataclasses import dataclass
-from microcode import MicroInstruction
-import microcode
+from microcode import MicroInstruction, State
 from mux import (
     MuxRStack,
     MuxTrSel,
@@ -25,13 +24,13 @@ class ControlUnit:
         self,
         mem_size: int,
         mprogram: List[MicroInstruction],
-        state_decoder_map: Dict[Opcode, int],
+        state_decoder_map: Dict[State, int],
         data_path: DataPath,
     ):
         self.rom_instructions: List[int] = [0] * mem_size
         self.i_cache: List[CacheLine] = [CacheLine() for _ in range(16)]
         self.mprogram: List[MicroInstruction] = mprogram
-        self.state_decoder_map: Dict[Opcode, int] = state_decoder_map
+        self.state_decoder_map: Dict[State, int] = state_decoder_map
         self.data_path: DataPath = data_path
 
         self.pc: int = 0
@@ -79,9 +78,9 @@ class ControlUnit:
         return line.valid and line.tag == tag
 
     def _decode_state(self) -> int:
-        if not self._is_cache_hit():
-            return microcode.cache_miss_mpc_addr
-        state = Opcode(self.ir)
+        state = State(
+            instruction=Opcode(self.ir), td_zero_bit=bool(self.data_path.td & 0x1)
+        )
         if state in self.state_decoder_map:
             return self.state_decoder_map[state]
         raise Exception("Unknown state occurred")
@@ -231,7 +230,10 @@ class ControlUnit:
         elif self.rom_busy and self.rom_countdown > 0:
             self.rom_countdown -= 1
 
-        rom_ready = (self.rom_countdown == 0) if self.rom_busy else True
+        if self.rom_busy:
+            rom_ready = self.rom_countdown == 0
+        else:
+            rom_ready = True
 
         # Анализ линий заморозки (Hardware Stall / Clock Gating)
         rom_stalled = memory_i_output and not rom_ready
@@ -242,7 +244,8 @@ class ControlUnit:
         if rom_stalled or ram_stalled or io_stalled:
             return True
 
-        # Сбрасываем триггер занятости ROM (RAM и IO сбросятся внутри _read_data_mux)
+        # сбрасываем триггер занятости Instruction ROM
+        # (RAM и IO сбросятся внутри _read_data_mux в DataPath)
         if memory_i_output and rom_ready:
             self.cache_write()
             self.rom_busy = False

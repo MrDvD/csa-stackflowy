@@ -17,7 +17,7 @@ from mux import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class MicroInstruction:
     alu_op: AluOp = AluOp.ADD
     alu_l_sel: MuxAluLeftSel = MuxAluLeftSel.S
@@ -83,19 +83,26 @@ class MicroInstruction:
         return self._get_str()
 
 
-cache_miss_mpc_addr = 0
+@dataclass(frozen=True)
+class State:
+    instruction: Opcode
+    td_zero_bit: bool
 
 
-def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
+def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     mprogram: List[MicroInstruction] = list()
-    state_decoder_map: Dict[Opcode, int] = dict()
+    state_decoder_map: Dict[State, int] = dict()
 
     def add_instruction(inst: MicroInstruction) -> int:
         mprogram.append(inst)
         return len(mprogram) - 1
 
-    def reg_state(opcode: Opcode, start_idx: int) -> None:
-        state_decoder_map[opcode] = start_idx
+    def reg_state(opcode: Opcode, start_idx: int, td: bool | None = None) -> None:
+        if td is None:
+            state_decoder_map[State(instruction=opcode, td_zero_bit=True)] = start_idx
+            state_decoder_map[State(instruction=opcode, td_zero_bit=False)] = start_idx
+            return
+        state_decoder_map[State(instruction=opcode, td_zero_bit=td)] = start_idx
 
     fetch_argument = MicroInstruction(
         select_i_prefetch=MuxIPrefetch.CACHE_ARG,
@@ -121,6 +128,15 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
     )
     add_instruction(MicroInstruction())  # decode address of next instruction
 
+    ### NOP
+    idx = add_instruction(fetch_argument)
+    add_instruction(
+        MicroInstruction(
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.NOP, idx)
+
     ### JUMP
     idx = add_instruction(fetch_argument)
     add_instruction(
@@ -131,6 +147,26 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[Opcode, int]]:
         )
     )
     reg_state(Opcode.JMP, idx)
+
+    ### JUMPIF
+    success_idx = add_instruction(fetch_argument)
+    add_instruction(
+        MicroInstruction(
+            latch_pc=True,
+            select_pc=MuxPcSel.I_PREFETCH,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    failure_idx = add_instruction(fetch_argument)
+    add_instruction(
+        MicroInstruction(
+            latch_pc=True,
+            select_pc=MuxPcSel.PC_PLUS_4,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.JMPIF, success_idx, td=True)
+    reg_state(Opcode.JMPIF, failure_idx, td=False)
 
     ### PUSH
     idx = add_instruction(fetch_argument)
