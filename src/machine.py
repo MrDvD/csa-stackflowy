@@ -8,7 +8,7 @@ import sys
 
 class Processor:
     def __init__(
-        self, data_memory_size: int, text_memory_size: int, input_data: List[int]
+        self, data_memory_size: int, text_memory_size: int, input_data: List[List[int]]
     ):
         self.data_path: DataPath = DataPath(data_memory_size, input_data)
         mprogram, state_decoder_map = generate_microprogram()
@@ -23,13 +23,12 @@ class Processor:
 
     def load_data(self, data_code: bytes) -> None:
         for idx, byte in enumerate(data_code):
-            if idx < len(self.data_path.data_memory):
-                self.data_path.data_memory[idx] = byte
+            self.data_path.data_memory.write(idx, byte)
 
     def run(self, limit: int) -> tuple[str, int]:
         model_tick: int = 0
         try:
-            while model_tick < limit and self.control_unit.mr.latch_mr:
+            while model_tick < limit and self.control_unit.mr.micromem_output:
                 stalled = self.control_unit.tick()
                 logging.debug(
                     "TICK: %d STALLED: [%s] mPC: %d MR: %s",
@@ -50,13 +49,24 @@ class Processor:
         if model_tick >= limit:
             logging.warning("Limit exceeded!")
 
-        output: str = "".join(map(str, self.data_path.output_buffer))
-        logging.info("output_buffer: %s", repr(output))
+        output: str = ""
+        for port in range(4):
+            io_device = self.data_path.io_devices[port]
+            io_output: str = "".join(map(str, io_device.output_buffer))
+            logging.info("output_buffer[%d]: %s", port, repr(io_output))
+            output += io_output + "\n"
         return output, model_tick
 
 
 def main(
-    data_file: str, text_file: str, input_file: str, data_mem_size: int, limit: int
+    data_file: str,
+    text_file: str,
+    input_file_1: str,
+    input_file_2: str,
+    input_file_3: str,
+    input_file_4: str,
+    data_mem_size: int,
+    limit: int,
 ) -> None:
     with open(text_file, "rb") as file:
         text_code: bytes = file.read()
@@ -64,9 +74,12 @@ def main(
     with open(data_file, "rb") as file:
         data_code: bytes = file.read()
 
-    with open(input_file, encoding="ascii") as file:
-        input_text: str = file.read()
-        input_data: list[int] = [ord(char) for char in input_text]
+    input_data: List[List[int]] = list()
+    for file in [input_file_1, input_file_2, input_file_3, input_file_4]:
+        with open(file, encoding="ascii") as file:
+            text: str = file.read()
+            data: list[int] = [ord(char) for char in text]
+            input_data.append(data)
 
     processor: Processor = Processor(
         data_memory_size=int(data_mem_size),
@@ -84,16 +97,35 @@ def main(
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 9:
         print(
-            "Wrong arguments: machine.py <data_file> <text_file> <input_file> <data_mem_size> <limit>"
+            "Wrong arguments: machine.py <data_file> <text_file> <input_file_1> ... <input_file_4> <data_mem_size> <limit>"
         )
         sys.exit(1)
-    _, data_file_arg, text_file_arg, input_file_arg, data_mem_size, limit = sys.argv
+    (
+        _,
+        data_file_arg,
+        text_file_arg,
+        input_file_1,
+        input_file_2,
+        input_file_3,
+        input_file_4,
+        data_mem_size,
+        limit,
+    ) = sys.argv
     if not data_mem_size.isdecimal():
         print("Wrong arguments: <data_mem_size> is not a decimal number")
         sys.exit(1)
     if not limit.isdecimal():
         print("Wrong arguments: <limit> is not a decimal number")
         sys.exit(1)
-    main(data_file_arg, text_file_arg, input_file_arg, int(data_mem_size), int(limit))
+    main(
+        data_file_arg,
+        text_file_arg,
+        input_file_1,
+        input_file_2,
+        input_file_3,
+        input_file_4,
+        int(data_mem_size),
+        int(limit),
+    )

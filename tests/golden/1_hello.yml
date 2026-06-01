@@ -18,6 +18,8 @@ in_source: |-
       ( curr_addr, new_addr : new_addr, curr_addr )
       ( addr : char ) <= MEM_DATA
       ( char : char, char )
+      ( : 0xF )
+      ( char_word, mask : char_word & mask )
       ( : 0 )
       ( char, zero : char == zero )
       ( : 1 )       ; load constant port number
@@ -35,9 +37,13 @@ in_source: |-
       $PRINT_CSTR(500)  ; using defined macros
       $PRINT_CSTR($WORLD_ADDR)
       <...>
-in_stdin: |-
+port_mapped_io:
+  0: [5]
+  1: []
+  2: []
+  3: []
 data_memory_size: 5000
-limit: 200
+limit: 250
 out_data: !!binary |
   UAAAAHAAAAVAAAAAUAAAAGAAAAGAAAAA
 out_data_hex: |

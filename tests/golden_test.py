@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 import contextlib
 import io
 import logging
@@ -17,7 +17,14 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         source: str = os.path.join(tmpdirname, "source.bf")
-        input_stream: str = os.path.join(tmpdirname, "input.txt")
+
+        port_streams = {
+            0: os.path.join(tmpdirname, "port0.txt"),
+            1: os.path.join(tmpdirname, "port1.txt"),
+            2: os.path.join(tmpdirname, "port2.txt"),
+            3: os.path.join(tmpdirname, "port3.txt"),
+        }
+
         target_prefix: str = os.path.join(tmpdirname, "target")
         target_data: str = target_prefix + "_data.bin"
         target_data_hex: str = target_prefix + "_data.hex"
@@ -26,8 +33,15 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
 
         with open(source, "w", encoding="utf-8") as file:
             file.write(golden["in_source"])
-        with open(input_stream, "w", encoding="utf-8") as file:
-            file.write(golden["in_stdin"])
+        for port_id, file_path in port_streams.items():
+            with open(file_path, "w", encoding="utf-8") as f:
+                port_input: List[Any] | str = golden.get("port_mapped_io", {}).get(
+                    port_id, ""
+                )
+                if isinstance(port_input, list):
+                    f.write("".join(map(str, port_input)))
+                else:
+                    f.write(port_input)
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             translator.main(source, target_prefix)
@@ -35,7 +49,10 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
             machine.main(
                 target_data,
                 target_code,
-                input_stream,
+                port_streams[0],
+                port_streams[1],
+                port_streams[2],
+                port_streams[3],
                 golden["data_memory_size"],
                 golden["limit"],
             )

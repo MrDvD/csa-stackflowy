@@ -129,13 +129,20 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     add_instruction(MicroInstruction())  # decode address of next instruction
 
     ### NOP
-    idx = add_instruction(fetch_argument)
-    add_instruction(
+    idx = add_instruction(
         MicroInstruction(
             select_mpc=MuxMpcSel.START,
         )
     )
     reg_state(Opcode.NOP, idx)
+
+    ### HALT
+    idx = add_instruction(
+        MicroInstruction(
+            micromem_output=False,
+        )
+    )
+    reg_state(Opcode.HLT, idx)
 
     ### JUMP
     idx = add_instruction(fetch_argument)
@@ -230,7 +237,7 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
         MicroInstruction(
             latch_td=True,
             latch_s=True,
-            select_td=MuxTdSel.S_SHIFT,
+            select_td=MuxTdSel.S,
             select_s=MuxSSel.NEXT,
             select_mpc=MuxMpcSel.START,
         )
@@ -249,5 +256,18 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
         )
     )
     reg_state(Opcode.LOAD, idx)
+
+    ### OUT
+    idx = add_instruction(
+        MicroInstruction(
+            io_write=True,
+            select_td=MuxTdSel.DATA_STACK,
+            select_s=MuxSSel.PREV_TWO,
+            latch_d_stack=True,
+            latch_s=True,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.OUT, idx)
 
     return mprogram, state_decoder_map

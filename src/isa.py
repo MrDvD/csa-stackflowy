@@ -118,7 +118,7 @@ class ArgType(IntEnum):
 
     @staticmethod
     def get(raw_arg: str) -> "ArgType":
-        if re.match(r"^0x\d+$", raw_arg):
+        if re.match(r"^0x[\da-fA-F]+$", raw_arg):
             return ArgType.HEX
         if re.match(r"^_\w+$", raw_arg):
             return ArgType.LABEL
@@ -138,7 +138,7 @@ class String:
 
 
 class Numeral:
-    pattern = r"0x\d+|-?\d+"
+    pattern = r"0x[\da-fA-F]+|-?\d+"
     regex = re.compile(pattern)
 
 

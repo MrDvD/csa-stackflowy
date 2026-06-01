@@ -214,14 +214,14 @@ class ControlUnit:
             case _:
                 raise Exception("Unknown MuxIPrefetch selector")
 
-    def tick(self) -> bool:
-        if self.mr.latch_mr:
-            self.mr = self.latch_mr()
-
+    def is_stall(self) -> bool:
         memory_i_output = not self._is_cache_hit()
 
-        self.data_path.tick_hardware(
-            memory_d_output=self.mr.memory_d_output, io_output=self.mr.io_output
+        self.data_path.tick(
+            ram_output=self.mr.memory_d_output,
+            ram_write=self.mr.memory_d_write,
+            io_output=self.mr.io_output,
+            io_write=self.mr.io_write,
         )
 
         if memory_i_output and not self.rom_busy:
@@ -237,8 +237,10 @@ class ControlUnit:
 
         # Анализ линий заморозки (Hardware Stall / Clock Gating)
         rom_stalled = memory_i_output and not rom_ready
-        ram_stalled = self.mr.memory_d_output and not self.data_path.ram_ready
-        io_stalled = self.mr.io_output and not self.data_path.io_ready
+        ram_stalled = self.mr.memory_d_output and not self.data_path.data_memory.ready
+        port_num: int = self.data_path.td & 0x3
+        io_device = self.data_path.io_devices[port_num]
+        io_stalled = self.mr.io_output and not io_device.ready
 
         # Если ХОТЯ БЫ ОДНО активное устройство занято — тактовый импульс до регистров CPU не доходит!
         if rom_stalled or ram_stalled or io_stalled:
@@ -249,6 +251,15 @@ class ControlUnit:
         if memory_i_output and rom_ready:
             self.cache_write()
             self.rom_busy = False
+            return True
+
+        return False
+
+    def tick(self) -> bool:
+        if self.mr.latch_mr and self.mr.micromem_output:
+            self.mr = self.latch_mr()
+
+        if self.is_stall():
             return True
 
         next_i_prefetch: List[int] = list(self.i_prefetch)
@@ -285,10 +296,12 @@ class ControlUnit:
             )
 
         if self.mr.memory_d_write:
-            self.data_path.memory_d_write()
+            self.data_path.data_memory.write(self.data_path.td, self.data_path.s)
 
         if self.mr.io_write:
-            self.data_path.io_write()
+            port_num: int = self.data_path.td & 0x3
+            io_device = self.data_path.io_devices[port_num]
+            io_device.write(self.data_path.s)
 
         next_pc: int = self.pc
         if self.mr.latch_pc:
@@ -324,7 +337,12 @@ class ControlUnit:
         return False
 
     def _to_str(self) -> str:
-        return f"PC: {hex(self.pc)} IR: {Opcode(self.ir).mnemonic} Td: {hex(self.data_path.td)} S: {hex(self.data_path.s)}"
+        return (
+            f"PC: 0x{self.pc:08x} "
+            f"IR: {Opcode(self.ir).mnemonic} "
+            f"Td: 0x{self.data_path.td:08x} "
+            f"S: 0x{self.data_path.s:08x}"
+        )
 
     def __str__(self) -> str:
         return self._to_str()

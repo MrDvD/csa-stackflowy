@@ -10,63 +10,113 @@ from mux import (
 )
 
 
-class DataPath:
-    def __init__(self, mem_size: int, input_data: List[int]):
-        self.data_memory: List[int] = [0] * mem_size
-        self.data_stack: List[int] = [0 for _ in range(14)]
-        self.input_buffer: List[int] = input_data
+class IODevice:
+    def __init__(self, input_buffer: List[int]) -> None:
+        self.busy: bool = False
+        self.countdown: int = 0
+        self.input_buffer: List[int] = input_buffer
         self.output_buffer: List[int] = list()
+
+    @property
+    def ready(self) -> int:
+        if self.busy:
+            return self.countdown == 0
+        return 0
+
+    def write(self, data_in: int):
+        self.output_buffer.append(data_in)
+
+    def read(self) -> int:
+        if len(self.input_buffer) == 0:
+            raise Exception("Input buffer is empty!")
+        return self.input_buffer.pop(0)
+
+    def tick(self, output: bool, write: bool) -> None:
+        if self.busy:
+            if self.countdown > 0:
+                self.countdown -= 1
+        else:
+            if output:
+                self.countdown = 10
+                self.busy = True
+            elif write:
+                self.countdown = 10
+                self.busy = True
+
+
+class Memory:
+    def __init__(self, mem_size: int, delay: int) -> None:
+        self.busy: bool = False
+        self.countdown: int = 0
+        self.memory: List[int] = [0] * mem_size
+        self.delay = delay
+        assert delay > 0, "Memory delay should be positive"
+
+    @property
+    def ready(self) -> int:
+        if self.busy:
+            return self.countdown == 0
+        return 0
+
+    def write(self, addr: int, data_in: int):
+        addr = addr % len(self.memory)
+        self.memory[addr] = data_in
+
+    def read(self, addr: int) -> int:
+        self.busy = False
+        addr = addr % len(self.memory)
+        four_bytes = self.memory[addr : addr + 4]
+        return int.from_bytes(four_bytes, byteorder="big")
+
+    def tick(self, output: bool, write: bool) -> None:
+        if self.busy:
+            if self.countdown > 0:
+                self.countdown -= 1
+        else:
+            if output:
+                self.countdown = self.delay
+                self.busy = True
+            elif write:
+                self.countdown = self.delay
+                self.busy = True
+
+
+class DataPath:
+    def __init__(self, mem_size: int, input_data: List[List[int]]):
+        self.data_memory: Memory = Memory(mem_size, 10)
+        self.data_stack: List[int] = [0 for _ in range(14)]
         self.s: int = 0
         self.td: int = 0
         self.sr_v: bool = False
         self.sr_c: bool = False
 
-        self.ram_countdown: int = 0
-        self.ram_busy: bool = False
+        self.io_devices = {
+            i: IODevice(input_buffer=input_data[i] if i < len(input_data) else list())
+            for i in range(4)
+        }
 
-        self.io_countdown: int = 0
-        self.io_busy: bool = False
-
-    @property
-    def ram_ready(self) -> bool:
-        return self.ram_countdown == 0 if self.ram_busy else True
-
-    @property
-    def io_ready(self) -> bool:
-        if self.io_busy:
-            return self.io_countdown == 0 and len(self.input_buffer) > 0
-        return len(self.input_buffer) > 0
-
-    def tick_hardware(self, memory_d_output: bool, io_output: bool) -> None:
-        if memory_d_output and not self.ram_busy:
-            self.ram_countdown = 10
-            self.ram_busy = True
-        elif self.ram_busy and self.ram_countdown > 0:
-            self.ram_countdown -= 1
-
-        if io_output and not self.io_busy and len(self.input_buffer) > 0:
-            self.io_countdown = 10
-            self.io_busy = True
-        elif self.io_busy and self.io_countdown > 0:
-            self.io_countdown -= 1
+    def tick(
+        self, ram_output: bool, ram_write: bool, io_output: bool, io_write: bool
+    ) -> None:
+        port_num = self.td % 0x3
+        device = self.io_devices[port_num]
+        device.tick(output=io_output, write=io_write)
+        self.data_memory.tick(output=ram_output, write=ram_write)
 
     def _read_data_mux(
         self, sel: MuxDataReadSel, memory_d_output: bool, io_output: bool
     ) -> int:
         match sel:
             case MuxDataReadSel.MEM_DATA:
-                if memory_d_output and self.ram_ready:
-                    self.ram_busy = False
-                    base_idx = self.td % len(self.data_memory)
-                    four_bytes = self.data_memory[base_idx : base_idx + 4]
-                    return int.from_bytes(four_bytes, byteorder="big")
+                if memory_d_output and self.data_memory.ready:
+                    return self.data_memory.read(self.td)
                 return 0
             case MuxDataReadSel.IO:
-                if io_output and self.io_ready:
+                port_num: int = self.td & 0x3
+                device = self.io_devices[port_num]
+                if io_output and device.ready:
                     self.io_busy = False
-                    if self.input_buffer:
-                        return self.input_buffer.pop(0)
-                    raise Exception("Input buffer is empty")
+                    return device.read()
                 return 0
             case _:
                 raise Exception("Unknown DataReadMux selector")
@@ -196,8 +246,10 @@ class DataPath:
         match sel:
             case MuxTdSel.DATA_READ:
                 return self._read_data_mux(dr_sel, memory_d_output, io_output)
-            case MuxTdSel.S_SHIFT:
+            case MuxTdSel.S:
                 return self.s
+            case MuxTdSel.DATA_STACK:
+                return self.data_stack[-1] & 0xFFFFFFFF
             case MuxTdSel.ALU_RESULT:
                 return alu_res
             case MuxTdSel.I_PREFETCH:
@@ -208,9 +260,11 @@ class DataPath:
     def latch_s(self, sel: MuxSSel) -> int:
         match sel:
             case MuxSSel.PREV:
-                return self.data_stack[-1]
+                return self.data_stack[-1] & 0xFFFFFFFF
             case MuxSSel.NEXT:
-                return self.td
+                return self.td & 0xFFFFFFFF
+            case MuxSSel.PREV_TWO:
+                return self.data_stack[-2] & 0xFFFFFFFF
             case _:
                 raise Exception("Unknown MuxS selector")
 
@@ -238,15 +292,17 @@ class DataPath:
             case MuxSSel.PREV:
                 next_d_stack = [self.data_stack[1], *self.data_stack]
                 next_d_stack.pop()
+            case MuxSSel.PREV_TWO:
+                next_d_stack = [
+                    self.data_stack[1],
+                    self.data_stack[1],
+                    *self.data_stack,
+                ]
+                next_d_stack.pop()
+                next_d_stack.pop()
             case MuxSSel.NEXT:
                 next_d_stack = self.data_stack[1:]
                 next_d_stack.append(self.s)
             case _:
                 raise Exception("Unknown MuxS selector")
         return next_d_stack
-
-    def memory_d_write(self) -> None:
-        self.data_memory[self.td % len(self.data_memory)] = self.s
-
-    def io_write(self) -> None:
-        self.output_buffer.append(self.s)

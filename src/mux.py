@@ -32,14 +32,16 @@ class MuxRStack(Enum):
 
 class MuxTdSel(Enum):
     DATA_READ = 0
-    S_SHIFT = 1
-    ALU_RESULT = 2
-    I_PREFETCH = 3
+    S = 1
+    DATA_STACK = 2
+    ALU_RESULT = 3
+    I_PREFETCH = 4
 
 
 class MuxSSel(Enum):
     PREV = 0
     NEXT = 1
+    PREV_TWO = 2
 
 
 class MuxAluLeftSel(Enum):
