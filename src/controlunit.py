@@ -226,24 +226,22 @@ class ControlUnit:
         )
 
         if memory_i_output and not self.rom_busy:
-            self.rom_countdown = 10  # Честная аппаратная задержка ROM
+            self.rom_countdown = 10
             self.rom_busy = True
         elif self.rom_busy and self.rom_countdown > 0:
             self.rom_countdown -= 1
 
         rom_ready = (self.rom_countdown == 0) if self.rom_busy else True
 
-        # Шаг 4: Анализ линий заморозки (Hardware Stall / Clock Gating)
-        # Выясняем, пытается ли процессор прочитать данные из устройства, которое ЕЩЕ НЕ ГОТОВО
+        # Анализ линий заморозки (Hardware Stall / Clock Gating)
         rom_stalled = memory_i_output and not rom_ready
         ram_stalled = self.mr.memory_d_output and not self.data_path.ram_ready
         io_stalled = self.mr.io_output and not self.data_path.io_ready
 
         # Если ХОТЯ БЫ ОДНО активное устройство занято — тактовый импульс до регистров CPU не доходит!
         if rom_stalled or ram_stalled or io_stalled:
-            return True  # Ранний выход за 1 такт. Время на плате идёт, контроллеры тикают, но CPU застыл.
+            return True
 
-        # Шаг 5: Если мы дошли сюда, значит, все запрошенные устройства выдали данные на шину.
         # Сбрасываем триггер занятости ROM (RAM и IO сбросятся внутри _read_data_mux)
         if memory_i_output and rom_ready:
             self.cache_write()
@@ -254,8 +252,7 @@ class ControlUnit:
         if self.mr.latch_i_prefetch:
             next_i_prefetch = self.latch_i_prefetch(self.mr.select_i_prefetch)
 
-        # не меняем сразу, чтобы симулировать
-        # параллельное распространение сигналов
+        # не меняем сразу, чтобы симулировать параллельное распространение сигналов
         next_d_stack: List[int] = self.data_path.data_stack
         if self.mr.latch_d_stack:
             next_d_stack = self.data_path.latch_d_stack(self.mr.select_s)

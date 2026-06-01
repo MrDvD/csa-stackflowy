@@ -39,7 +39,7 @@ class DataPath:
 
     def tick_hardware(self, memory_d_output: bool, io_output: bool) -> None:
         if memory_d_output and not self.ram_busy:
-            self.ram_countdown = 2
+            self.ram_countdown = 10
             self.ram_busy = True
         elif self.ram_busy and self.ram_countdown > 0:
             self.ram_countdown -= 1
@@ -57,7 +57,9 @@ class DataPath:
             case MuxDataReadSel.MEM_DATA:
                 if memory_d_output and self.ram_ready:
                     self.ram_busy = False
-                    return self.data_memory[self.td % len(self.data_memory)]
+                    base_idx = self.td % len(self.data_memory)
+                    four_bytes = self.data_memory[base_idx : base_idx + 4]
+                    return int.from_bytes(four_bytes, byteorder="big")
                 return 0
             case MuxDataReadSel.IO:
                 if io_output and self.io_ready:
