@@ -30,16 +30,21 @@ class Processor:
         try:
             while model_tick < limit and self.control_unit.mr.micromem_output:
                 stalled = self.control_unit.tick()
+                # logging.debug(
+                #     "TICK: %d STALLED: [%s] mPC: %d MR: %s",
+                #     model_tick,
+                #     "+" if stalled else " ",
+                #     self.control_unit.mpc,
+                #     self.control_unit.mr,
+                # )
                 logging.debug(
-                    "TICK: %d STALLED: [%s] mPC: %d MR: %s",
+                    "TICK: %s [%s] | %s",
                     model_tick,
-                    "+" if stalled else " ",
-                    self.control_unit.mpc,
-                    self.control_unit.mr,
+                    "S" if stalled else " ",
+                    self.control_unit,
                 )
-                logging.debug("%s", self.control_unit)
                 model_tick += 1
-                if model_tick == 197:
+                if model_tick == 95:
                     continue
         except EOFError:
             logging.warning("Input buffer is empty!")

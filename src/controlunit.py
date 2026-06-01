@@ -53,12 +53,7 @@ class ControlUnit:
         return int.from_bytes(four_bytes, byteorder="little")
 
     def _get_prefetch_value(self) -> int:
-        return (
-            self.i_prefetch[0]
-            | (self.i_prefetch[1] << 8)
-            | (self.i_prefetch[2] << 16)
-            | (self.i_prefetch[3] << 24)
-        )
+        return int.from_bytes(self.i_prefetch, byteorder="little")
 
     def _is_cache_hit(self) -> bool:
         offset = self.pc & 0x3
@@ -339,7 +334,8 @@ class ControlUnit:
     def _to_str(self) -> str:
         return (
             f"PC: 0x{self.pc:08x} "
-            f"IR: {Opcode(self.ir).mnemonic} "
+            f"IPF: 0x{self._get_prefetch_value():08x} "
+            f"IR: {Opcode(self.ir).mnemonic[:5]:<5} "
             f"S: 0x{self.data_path.s:08x} "
             f"Td: 0x{self.data_path.td:08x}"
         )

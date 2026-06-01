@@ -271,10 +271,8 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     idx = add_instruction(
         MicroInstruction(
             memory_d_output=True,
-            latch_s=True,
             latch_td=True,
             select_td=MuxTdSel.DATA_READ,
-            select_s=MuxSSel.PREV,
             select_mpc=MuxMpcSel.START,
         )
     )
@@ -284,6 +282,7 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     idx = add_instruction(
         MicroInstruction(
             io_write=True,
+            latch_td=True,
             select_td=MuxTdSel.DATA_STACK,
             select_s=MuxSSel.PREV_TWO,
             latch_d_stack=True,

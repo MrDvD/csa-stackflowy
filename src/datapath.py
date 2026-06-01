@@ -115,7 +115,6 @@ class DataPath:
                 port_num: int = self.td & 0x3
                 device = self.io_devices[port_num]
                 if io_output and device.ready:
-                    self.io_busy = False
                     return device.read()
                 return 0
             case _:

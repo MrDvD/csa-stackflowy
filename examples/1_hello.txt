@@ -9,15 +9,15 @@
     "World"
 
 @macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
+    ( : %addr ) ; addr
 _print_loop:
-    ( : %addr )
     ( addr : addr, addr )
     ( : 1 )
     ( addr, one : addr + one )
     ( curr_addr, new_addr : new_addr, curr_addr )
     ( addr : char ) <= MEM_DATA
     ( char : char, char )
-    ( : 0xF )
+    ( : 0xFF )
     ( char_word, mask : char_word & mask )
     ( : 0 )
     ( char, zero : char == zero )

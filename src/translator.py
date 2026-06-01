@@ -83,7 +83,7 @@ class Translator:
                         chunk = st_bytes[i : i + 4]
                         padded = chunk.ljust(4, b"\x00")
                         content.extend(
-                            struct.pack("<I", struct.unpack(">I", padded)[0])
+                            struct.pack("<I", struct.unpack("<I", padded)[0])
                         )
                     pc += ((len(st_bytes) + 3) // 4) * 4
                 elif n:

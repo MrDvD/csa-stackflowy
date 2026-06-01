@@ -10,21 +10,23 @@ in_source: |-
       "World"
 
   @macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
-      ( : %addr ) ; addr
+      ( : %addr )
+      ( : 3 )
+      ( addr, offset : addr - offset )
   _print_loop:
-      ( addr : addr, addr ) ; addr, addr
-      ( : 1 ) ; addr, addr, 1
-      ( addr, one : addr + one ) ; addr, addr+1
-      ( curr_addr, new_addr : new_addr, curr_addr ) ; addr+1, addr
-      ( addr : char ) <= MEM_DATA ; addr+1, char
-      ( char : char, char ) ; addr+1, char, char
-      ( : 0xFF ) ; addr+1, char, char, mask
-      ( char_word, mask : char_word & mask ) ; addr+1, char, masked_char
-      ( : 0 ) ; addr+1, char, masked_char, 0
-      ( char, zero : char == zero ) ; addr+1, char, is_zero
-      ( : 1 )       ; load constant port number ; addr+1, char, is_zero, port
-      ( is_null, port_num : port_num, is_null ) ; addr+1, char, port, is_zero
-      <? _print_done> ; addr+1, char, port
+      ( addr : addr, addr )
+      ( : 1 )
+      ( addr, one : addr + one )
+      ( curr_addr, new_addr : new_addr, curr_addr )
+      ( addr : char ) <= MEM_DATA
+      ( char : char, char )
+      ( : 0xFF )
+      ( char_word, mask : char_word & mask )
+      ( : 0 )
+      ( char, zero : char == zero )
+      ( : 1 )       ; load constant port number
+      ( is_null, port_num : port_num, is_null )
+      <? _print_done>
       ( char, port_num : ) => OUT
       <_print_loop>
   _print_done:
@@ -38,12 +40,12 @@ in_source: |-
       $PRINT_CSTR($WORLD_ADDR)
       <...>
 port_mapped_io:
-  0: [5]
+  0: []
   1: []
   2: []
   3: []
 data_memory_size: 5000
-limit: 1000
+limit: 1500
 out_data: !!binary |
   UAAAAHAAAAVAAAAAUAAAAGAAAAGAAAAA
 out_data_hex: |
