@@ -8,7 +8,7 @@ import machine
 import pytest
 import translator
 
-MAX_LOG: int = 4000
+MAX_LOG: int = 1000
 
 
 @pytest.mark.golden_test("golden/*.yml")
@@ -55,6 +55,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
                 port_streams[3],
                 golden["data_memory_size"],
                 golden["limit"],
+                golden["view"],
             )
 
         with open(target_data, "rb") as file:

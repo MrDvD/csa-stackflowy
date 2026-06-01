@@ -10,6 +10,7 @@ from mux import (
     MuxMpcSel,
     MuxPcSel,
 )
+import re
 
 
 @dataclass
@@ -26,6 +27,7 @@ class ControlUnit:
         mprogram: List[MicroInstruction],
         state_decoder_map: Dict[State, int],
         data_path: DataPath,
+        view_template: str,
     ):
         self.rom_instructions: List[int] = [0] * mem_size
         self.i_cache: List[CacheLine] = [CacheLine() for _ in range(16)]
@@ -45,6 +47,8 @@ class ControlUnit:
 
         self.rom_countdown: int = 0
         self.rom_busy: bool = False
+
+        self.view_template: str = view_template
 
     def _read_i_memory(self, addr: int) -> int:
         base_pc = addr & ~3
@@ -331,17 +335,98 @@ class ControlUnit:
         self.data_path.td = next_td
         return False
 
-    def _to_str(self) -> str:
-        return (
-            f"PC: 0x{self.pc:08x} "
-            f"IPF: 0x{self._get_prefetch_value():08x} "
-            f"IR: {Opcode(self.ir).mnemonic[:5]:<5} "
-            f"S: 0x{self.data_path.s:08x} "
-            f"Td: 0x{self.data_path.td:08x}"
-        )
+    def render_view(self) -> str:
+        def evaluate_expression(match: re.Match[str]) -> str:
+            expr = match.group(1).strip()
+
+            match expr:
+                case "pc:dec":
+                    return str(self.pc)
+                case "pc:hex":
+                    return f"{self.pc:08x}"
+                case "mpc:dec":
+                    return str(self.mpc)
+                case "mpc:hex":
+                    return f"{self.mpc:04x}"
+                case "ir:hex":
+                    return f"{self.ir:02x}"
+                case "ir:mnemonic":
+                    return f"{Opcode(self.ir).mnemonic[:5]:<5}"
+                case "tr:dec":
+                    return str(self.tr)
+                case "tr:hex":
+                    return f"{self.tr:08x}"
+                case "iprefetch:hex":
+                    return f"{self._get_prefetch_value():08x}"
+                case "rstack:top":
+                    return str(self.return_stack[-1] if self.return_stack else 0)
+                case "rstack:dump":
+                    return str(self.return_stack)
+                case "s:dec":
+                    return str(self.data_path.s)
+                case "s:hex":
+                    return f"{self.data_path.s:08x}"
+                case "td:dec":
+                    return str(self.data_path.td)
+                case "td:hex":
+                    return f"{self.data_path.td:08x}"
+                case "dstack:top":
+                    return str(
+                        self.data_path.data_stack[-1]
+                        if self.data_path.data_stack
+                        else 0
+                    )
+                case "dstack:dump":
+                    return str(self.data_path.data_stack)
+                case "sr:v":
+                    return "1" if self.data_path.sr_v else "0"
+                case "sr:c":
+                    return "1" if self.data_path.sr_c else "0"
+                case "sr:flags":
+                    return f"{'V' if self.data_path.sr_v else '-'}{'C' if self.data_path.sr_c else '-'}"
+                case _ if expr.startswith("memory:"):
+                    try:
+                        _, start_str, end_str = expr.split(":")
+                        start, end = int(start_str), int(end_str)
+                        return str(self.data_path.data_memory.memory[start:end])
+                    except (ValueError, IndexError):
+                        return "[Mem Error]"
+                case _ if expr.startswith("io:"):
+                    try:
+                        _, port_str, fmt = expr.split(":")
+                        port = int(port_str)
+                        device = self.data_path.io_devices.get(port)
+                        if not device:
+                            return "?"
+
+                        buf = device.output_buffer
+                        if fmt == "dec":
+                            return str(buf)
+                        elif fmt == "hex":
+                            return " ".join(f"{x:02x}" for x in buf)
+                        elif fmt == "sym":
+                            chars: List[str] = list()
+                            for x in buf:
+                                if 32 <= x <= 126:
+                                    chars.append(chr(x))
+                                elif x == 0:
+                                    chars.append(r"\0")
+                                elif x == 10:
+                                    chars.append(r"\n")
+                                else:
+                                    chars.append("?")
+                            return "".join(chars)
+                        else:
+                            return "?"
+                    except (ValueError, KeyError):
+                        return "?"
+                case _:
+                    return f"{{{expr}}}"
+
+        return re.sub(r"\{(.*?)\}", evaluate_expression, self.view_template)
 
     def __str__(self) -> str:
-        return self._to_str()
+        return self.render_view()
 
     def __repr__(self) -> str:
-        return self._to_str()
+        return self.render_view()

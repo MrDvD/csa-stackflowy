@@ -8,12 +8,16 @@ import sys
 
 class Processor:
     def __init__(
-        self, data_memory_size: int, text_memory_size: int, input_data: List[List[int]]
+        self,
+        data_memory_size: int,
+        text_memory_size: int,
+        input_data: List[List[int]],
+        view_template: str,
     ):
         self.data_path: DataPath = DataPath(data_memory_size, input_data)
         mprogram, state_decoder_map = generate_microprogram()
         self.control_unit: ControlUnit = ControlUnit(
-            text_memory_size, mprogram, state_decoder_map, self.data_path
+            text_memory_size, mprogram, state_decoder_map, self.data_path, view_template
         )
 
     def load_text(self, text_code: bytes) -> None:
@@ -72,6 +76,7 @@ def main(
     input_file_4: str,
     data_mem_size: int,
     limit: int,
+    view_template: str,
 ) -> None:
     with open(text_file, "rb") as file:
         text_code: bytes = file.read()
@@ -90,6 +95,7 @@ def main(
         data_memory_size=int(data_mem_size),
         text_memory_size=len(text_code),
         input_data=input_data,
+        view_template=view_template,
     )
     processor.load_text(text_code)
     processor.load_data(data_code)
@@ -102,9 +108,9 @@ def main(
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    if len(sys.argv) != 9:
+    if len(sys.argv) != 10:
         print(
-            "Wrong arguments: machine.py <data_file> <text_file> <input_file_1> ... <input_file_4> <data_mem_size> <limit>"
+            "Wrong arguments: machine.py <data_file> <text_file> <input_file_1> ... <input_file_4> <data_mem_size> <limit> <view_template>"
         )
         sys.exit(1)
     (
@@ -117,6 +123,7 @@ if __name__ == "__main__":
         input_file_4,
         data_mem_size,
         limit,
+        view_template,
     ) = sys.argv
     if not data_mem_size.isdecimal():
         print("Wrong arguments: <data_mem_size> is not a decimal number")
@@ -133,4 +140,5 @@ if __name__ == "__main__":
         input_file_4,
         int(data_mem_size),
         int(limit),
+        view_template,
     )

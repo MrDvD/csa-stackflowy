@@ -66,7 +66,7 @@ class Decoder:
         hex_list: List[str] = list()
         pc: int = 0
         while pc < len(code):
-            addr = str(pc).rjust(5)
+            addr = str(pc)
             opcode = Opcode(code[pc])
             mnemonics: str = opcode.mnemonic
             hex_code: str = ""
@@ -78,7 +78,7 @@ class Decoder:
                     hex_code = code[pc : pc + 5].hex()
                     pc += 4
                 case _:
-                    hex_code = hex(code[pc])[2:].rjust(2, "0").ljust(10)
+                    hex_code = hex(code[pc])[2:].rjust(2, "0")
             hex_list.append(f"{addr} - 0x{hex_code} - {mnemonics}")
             pc += 1
         return "\n".join(hex_list)
@@ -96,13 +96,13 @@ class Decoder:
                     pc += 1
                 end = pc - 1
                 if start < end:
-                    addr_range = f"{start}...{end}".rjust(13)
+                    addr_range = f"{start}...{end}"
                     data_list.append(f"{addr_range} - 0x00 - .")
                 else:
-                    addr = str(start).rjust(13)
+                    addr = str(start)
                     data_list.append(f"{addr} - 0x00 - .")
             else:
-                addr = str(pc).rjust(13)
+                addr = str(pc)
                 hex_data = hex(data[pc])
                 char_repr = Decoder._get_char(data[pc])
                 data_list.append(f"{addr} - {hex_data} - {char_repr}")

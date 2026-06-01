@@ -9,7 +9,9 @@
     "World"
 
 @macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
-    ( : %addr ) ; addr
+    ( : %addr )
+    ( : 3 )
+    ( addr, offset : addr - offset )
 _print_loop:
     ( addr : addr, addr )
     ( : 1 )
