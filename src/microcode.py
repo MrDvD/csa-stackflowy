@@ -159,6 +159,11 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     success_idx = add_instruction(fetch_argument)
     add_instruction(
         MicroInstruction(
+            latch_td=True,
+            latch_s=True,
+            select_td=MuxTdSel.S,
+            select_s=MuxSSel.PREV,
+            latch_d_stack=True,
             latch_pc=True,
             select_pc=MuxPcSel.I_PREFETCH,
             select_mpc=MuxMpcSel.START,
@@ -167,6 +172,11 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     failure_idx = add_instruction(fetch_argument)
     add_instruction(
         MicroInstruction(
+            latch_td=True,
+            latch_s=True,
+            select_td=MuxTdSel.S,
+            select_s=MuxSSel.PREV,
+            latch_d_stack=True,
             latch_pc=True,
             select_pc=MuxPcSel.PC_PLUS_4,
             select_mpc=MuxMpcSel.START,
@@ -181,6 +191,7 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
         MicroInstruction(
             latch_td=True,
             select_td=MuxTdSel.I_PREFETCH,
+            latch_s=True,
             latch_d_stack=True,
             latch_pc=True,
             select_pc=MuxPcSel.PC_PLUS_4,

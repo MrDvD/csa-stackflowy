@@ -24,12 +24,12 @@ class IODevice:
         return 0
 
     def write(self, data_in: int):
-        self.output_buffer.append(data_in)
+        self.output_buffer.append(data_in & 0xFF)
 
     def read(self) -> int:
         if len(self.input_buffer) == 0:
             raise Exception("Input buffer is empty!")
-        return self.input_buffer.pop(0)
+        return self.input_buffer.pop(0) & 0xFF
 
     def tick(self, output: bool, write: bool) -> None:
         if self.busy:
@@ -287,7 +287,7 @@ class DataPath:
                 raise Exception("Unknown MuxSr selector")
 
     def latch_d_stack(self, sel: MuxSSel) -> List[int]:
-        next_d_stack: List[int] = self.data_stack
+        next_d_stack: List[int] = list(self.data_stack)
         match sel:
             case MuxSSel.PREV:
                 next_d_stack = [self.data_stack[1], *self.data_stack]

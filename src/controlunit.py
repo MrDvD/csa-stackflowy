@@ -267,7 +267,7 @@ class ControlUnit:
             next_i_prefetch = self.latch_i_prefetch(self.mr.select_i_prefetch)
 
         # не меняем сразу, чтобы симулировать параллельное распространение сигналов
-        next_d_stack: List[int] = self.data_path.data_stack
+        next_d_stack: List[int] = list(self.data_path.data_stack)
         if self.mr.latch_d_stack:
             next_d_stack = self.data_path.latch_d_stack(self.mr.select_s)
 
@@ -301,7 +301,7 @@ class ControlUnit:
         if self.mr.io_write:
             port_num: int = self.data_path.td & 0x3
             io_device = self.data_path.io_devices[port_num]
-            io_device.write(self.data_path.s)
+            io_device.write(self.data_path.s & 0xFF)
 
         next_pc: int = self.pc
         if self.mr.latch_pc:
@@ -340,8 +340,8 @@ class ControlUnit:
         return (
             f"PC: 0x{self.pc:08x} "
             f"IR: {Opcode(self.ir).mnemonic} "
-            f"Td: 0x{self.data_path.td:08x} "
-            f"S: 0x{self.data_path.s:08x}"
+            f"S: 0x{self.data_path.s:08x} "
+            f"Td: 0x{self.data_path.td:08x}"
         )
 
     def __str__(self) -> str:
