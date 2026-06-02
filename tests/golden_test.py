@@ -8,12 +8,11 @@ import machine
 import pytest
 import translator
 
-MAX_LOG: int = 1000
-
 
 @pytest.mark.golden_test("golden/*.yml")
 def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.DEBUG)
+    logging.setLoggerClass(machine.SlicingLogger)
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         source: str = os.path.join(tmpdirname, "source.bf")
@@ -45,7 +44,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             translator.main(source, target_prefix)
-            print("============================================================")
+            machine.SlicingLogger.slice_cfg = golden.get("slice", "all")
             machine.main(
                 target_data,
                 target_code,
@@ -72,4 +71,4 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
         assert text_code == golden.out["out_text"]
         assert text_code_hex == golden.out["out_text_hex"]
         assert stdout.getvalue() == golden.out["out_stdout"]
-        assert caplog.text[0:MAX_LOG] + "EOF" == golden.out["out_log"]
+        assert caplog.text == golden.out["out_log"]

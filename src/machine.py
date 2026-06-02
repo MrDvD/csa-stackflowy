@@ -61,10 +61,50 @@ class Processor:
         output: str = ""
         for port in range(4):
             io_device = self.data_path.io_devices[port]
-            io_output: str = repr(io_device.output_buffer)
-            logging.info("output_buffer[%d]: %s", port, io_output)
-            output += io_output + "\n"
+            output += f"outputbuffer[{port}]: {repr(io_device.output_buffer)}\n"
         return output, model_tick
+
+
+class SlicingLogger(logging.Logger):
+    slice_cfg: List[str] | str = "all"
+    buffer: List[logging.LogRecord] = list()
+    original_handle = logging.root.handle
+
+    @classmethod
+    def flush_sliced(cls):
+        sliced = cls.buffer
+        if cls.slice_cfg == "last":
+            sliced = cls.buffer[-1:] if cls.buffer else []
+        elif isinstance(cls.slice_cfg, list) and len(cls.slice_cfg) == 2:
+            mode, n = cls.slice_cfg
+            try:
+                n = int(n)
+                if mode == "head":
+                    sliced = cls.buffer[:n]
+                elif mode == "tail":
+                    sliced = cls.buffer[-n:]
+                else:
+                    pass
+            except (ValueError, TypeError):
+                pass
+
+        for record in sliced:
+            cls.original_handle(record)
+        cls.buffer.clear()
+
+
+def _custom_handle(record: logging.LogRecord) -> None:
+    if (
+        record.levelno == logging.DEBUG
+        and isinstance(record.msg, str)
+        and record.msg.startswith("TICK:")
+    ):
+        SlicingLogger.buffer.append(record)
+    else:
+        SlicingLogger.original_handle(record)
+
+
+logging.root.handle = _custom_handle
 
 
 def main(
@@ -100,7 +140,10 @@ def main(
     processor.load_text(text_code)
     processor.load_data(data_code)
 
-    output, ticks = processor.run(limit)
+    try:
+        output, ticks = processor.run(limit)
+    finally:
+        SlicingLogger.flush_sliced()
 
     print("".join(output))
     print("ticks:", ticks)
