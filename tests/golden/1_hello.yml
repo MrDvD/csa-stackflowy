@@ -69,46 +69,46 @@ out_data_hex: |-
 out_text: !!binary |
   FAUAAAAc9AEAABwDAAAABR4cAQAAAAQfGB4c/wAAAAgcAAAAAA8cAQAAAB8VNwAAABsUEAAAAB0cABAAABwDAAAABR4cAQAAAAQfGB4c/wAAAAgcAAAAAA8cAQAAAB8VagAAABsUQwAAAB0B
 out_text_hex: |-
-  0 - 0x1405000000 - jump 5
-  5 - 0x1cf4010000 - push 500
-  10 - 0x1c03000000 - push 3
-  15 - 0x05 - substract
-  16 - 0x1e - duplicate
-  17 - 0x1c01000000 - push 1
-  22 - 0x04 - add
-  23 - 0x1f - swap
-  24 - 0x18 - load
-  25 - 0x1e - duplicate
-  26 - 0x1cff000000 - push 255
-  31 - 0x08 - and
-  32 - 0x1c00000000 - push 0
-  37 - 0x0f - is_==
-  38 - 0x1c01000000 - push 1
-  43 - 0x1f - swap
-  44 - 0x1537000000 - jump_if 55
-  49 - 0x1b - out
-  50 - 0x1410000000 - jump 16
-  55 - 0x1d - pop
-  56 - 0x1c00100000 - push 4096
-  61 - 0x1c03000000 - push 3
-  66 - 0x05 - substract
-  67 - 0x1e - duplicate
-  68 - 0x1c01000000 - push 1
-  73 - 0x04 - add
-  74 - 0x1f - swap
-  75 - 0x18 - load
-  76 - 0x1e - duplicate
-  77 - 0x1cff000000 - push 255
-  82 - 0x08 - and
-  83 - 0x1c00000000 - push 0
-  88 - 0x0f - is_==
-  89 - 0x1c01000000 - push 1
-  94 - 0x1f - swap
-  95 - 0x156a000000 - jump_if 106
-  100 - 0x1b - out
-  101 - 0x1443000000 - jump 67
-  106 - 0x1d - pop
-  107 - 0x01 - halt
+  0x00000000 - 0x1405000000 - jump 5
+  0x00000005 - 0x1cf4010000 - push 500
+  0x0000000a - 0x1c03000000 - push 3
+  0x0000000f - 0x05 - substract
+  0x00000010 - 0x1e - duplicate
+  0x00000011 - 0x1c01000000 - push 1
+  0x00000016 - 0x04 - add
+  0x00000017 - 0x1f - swap
+  0x00000018 - 0x18 - load
+  0x00000019 - 0x1e - duplicate
+  0x0000001a - 0x1cff000000 - push 255
+  0x0000001f - 0x08 - and
+  0x00000020 - 0x1c00000000 - push 0
+  0x00000025 - 0x0f - is_==
+  0x00000026 - 0x1c01000000 - push 1
+  0x0000002b - 0x1f - swap
+  0x0000002c - 0x1537000000 - jump_if 55
+  0x00000031 - 0x1b - out
+  0x00000032 - 0x1410000000 - jump 16
+  0x00000037 - 0x1d - pop
+  0x00000038 - 0x1c00100000 - push 4096
+  0x0000003d - 0x1c03000000 - push 3
+  0x00000042 - 0x05 - substract
+  0x00000043 - 0x1e - duplicate
+  0x00000044 - 0x1c01000000 - push 1
+  0x00000049 - 0x04 - add
+  0x0000004a - 0x1f - swap
+  0x0000004b - 0x18 - load
+  0x0000004c - 0x1e - duplicate
+  0x0000004d - 0x1cff000000 - push 255
+  0x00000052 - 0x08 - and
+  0x00000053 - 0x1c00000000 - push 0
+  0x00000058 - 0x0f - is_==
+  0x00000059 - 0x1c01000000 - push 1
+  0x0000005e - 0x1f - swap
+  0x0000005f - 0x156a000000 - jump_if 106
+  0x00000064 - 0x1b - out
+  0x00000065 - 0x1443000000 - jump 67
+  0x0000006a - 0x1d - pop
+  0x0000006b - 0x01 - halt
 out_stdout: |
   outputbuffer[0]: []
   outputbuffer[1]: [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]

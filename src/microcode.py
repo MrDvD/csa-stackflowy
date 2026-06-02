@@ -30,7 +30,7 @@ class MicroInstruction:
     latch_r_stack: bool = False
     latch_tr: bool = False
     select_r_stack: MuxRStack = MuxRStack.PREV
-    select_tr: MuxTrSel = MuxTrSel.PC
+    select_tr: MuxTrSel = MuxTrSel.PC_PLUS_4
     latch_pc: bool = False
     select_pc: MuxPcSel = MuxPcSel.PC_PLUS_1
     latch_sr: bool = False
@@ -187,6 +187,33 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     )
     reg_state(Opcode.JMPIF, success_idx, td=True)
     reg_state(Opcode.JMPIF, failure_idx, td=False)
+
+    ### CALL
+    idx = add_instruction(fetch_argument)
+    add_instruction(
+        MicroInstruction(
+            latch_tr=True,
+            latch_r_stack=True,
+            select_r_stack=MuxRStack.NEXT,
+            latch_pc=True,
+            select_pc=MuxPcSel.I_PREFETCH,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.CALL, idx)
+
+    ### RET
+    idx = add_instruction(
+        MicroInstruction(
+            latch_tr=True,
+            select_tr=MuxTrSel.STACK_PREV,
+            latch_r_stack=True,
+            latch_pc=True,
+            select_pc=MuxPcSel.TR,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.RET, idx)
 
     ### PUSH
     idx = add_instruction(fetch_argument)

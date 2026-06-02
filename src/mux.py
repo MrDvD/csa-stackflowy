@@ -9,7 +9,7 @@ class MuxPcSel(Enum):
 
 
 class MuxTrSel(Enum):
-    PC = 0
+    PC_PLUS_4 = 0
     STACK_PREV = 1
 
 

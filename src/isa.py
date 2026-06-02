@@ -66,7 +66,7 @@ class Decoder:
         hex_list: List[str] = list()
         pc: int = 0
         while pc < len(code):
-            addr = str(pc)
+            addr = f"{pc:08x}"
             opcode = Opcode(code[pc])
             mnemonics: str = opcode.mnemonic
             hex_code: str = ""
@@ -78,8 +78,8 @@ class Decoder:
                     hex_code = code[pc : pc + 5].hex()
                     pc += 4
                 case _:
-                    hex_code = hex(code[pc])[2:].rjust(2, "0")
-            hex_list.append(f"{addr} - 0x{hex_code} - {mnemonics}")
+                    hex_code = f"{code[pc]:02x}"
+            hex_list.append(f"0x{addr} - 0x{hex_code} - {mnemonics}")
             pc += 1
         return "\n".join(hex_list)
 

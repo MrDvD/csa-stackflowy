@@ -99,8 +99,8 @@ class ControlUnit:
 
     def latch_tr(self, sel: MuxTrSel) -> int:
         match sel:
-            case MuxTrSel.PC:
-                return self.pc
+            case MuxTrSel.PC_PLUS_4:
+                return self.pc + 4
             case MuxTrSel.STACK_PREV:
                 return self.return_stack[-1]
             case _:
@@ -347,7 +347,7 @@ class ControlUnit:
                 case "mpc:dec":
                     return str(self.mpc)
                 case "mpc:hex":
-                    return f"{self.mpc:04x}"
+                    return f"{self.mpc:02x}"
                 case "ir:hex":
                     return f"{self.ir:02x}"
                 case "ir:mnemonic":

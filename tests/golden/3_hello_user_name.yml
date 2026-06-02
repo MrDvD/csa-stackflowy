@@ -103,10 +103,10 @@ port_mapped_io:
   2: []
   3: []
 data_memory_size: 5000
-limit: 1500
-slice: ["tail", "200"]
+limit: 2500
+slice: ["head", 500]
 view: |-
-  PC: {pc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:hex} Td: {td:dec}
+  PC: {pc:hex} mPC: {mpc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:hex} Td: {td:hex} Tr: {tr:hex}
 out_data: !!binary |
 
 out_data_hex: |
@@ -114,17 +114,56 @@ out_data_hex: |
 out_text: !!binary |
   FAUAAAAcAAAAABoeHAAAAAAPFSIAAAAcAwAAABsUBQAAAAE=
 out_text_hex: |-
-  0 - 0x1405000000 - jump 5
-  5 - 0x1c00000000 - push 0
-  10 - 0x1a - in
-  11 - 0x1e - duplicate
-  12 - 0x1c00000000 - push 0
-  17 - 0x0f - is_==
-  18 - 0x1522000000 - jump_if 34
-  23 - 0x1c03000000 - push 3
-  28 - 0x1b - out
-  29 - 0x1405000000 - jump 5
-  34 - 0x01 - halt
+  0x00000000 - 0x1405000000 - jump 5
+  0x00000005 - 0x1c00000000 - push 0
+  0x0000000a - 0x1638000000 - call 56
+  0x0000000f - 0x1c28000000 - push 40
+  0x00000014 - 0x165a000000 - call 90
+  0x00000019 - 0x1c15000000 - push 21
+  0x0000001e - 0x1638000000 - call 56
+  0x00000023 - 0x1c28000000 - push 40
+  0x00000028 - 0x1638000000 - call 56
+  0x0000002d - 0x1c23000000 - push 35
+  0x00000032 - 0x1638000000 - call 56
+  0x00000037 - 0x01 - halt
+  0x00000038 - 0x1e - duplicate
+  0x00000039 - 0x18 - load
+  0x0000003a - 0x1e - duplicate
+  0x0000003b - 0x1c00000000 - push 0
+  0x00000040 - 0x0f - is_==
+  0x00000041 - 0x1557000000 - jump_if 87
+  0x00000046 - 0x1c02000000 - push 2
+  0x0000004b - 0x1b - out
+  0x0000004c - 0x1c01000000 - push 1
+  0x00000051 - 0x04 - add
+  0x00000052 - 0x1438000000 - jump 56
+  0x00000057 - 0x1d - pop
+  0x00000058 - 0x1d - pop
+  0x00000059 - 0x17 - ret
+  0x0000005a - 0x1e - duplicate
+  0x0000005b - 0x1c00000000 - push 0
+  0x00000060 - 0x1a - in
+  0x00000061 - 0x1e - duplicate
+  0x00000062 - 0x1c0a000000 - push 10
+  0x00000067 - 0x0f - is_==
+  0x00000068 - 0x1586000000 - jump_if 134
+  0x0000006d - 0x1e - duplicate
+  0x0000006e - 0x1c00000000 - push 0
+  0x00000073 - 0x0f - is_==
+  0x00000074 - 0x1586000000 - jump_if 134
+  0x00000079 - 0x1f - swap
+  0x0000007a - 0x19 - store
+  0x0000007b - 0x1c01000000 - push 1
+  0x00000080 - 0x04 - add
+  0x00000081 - 0x145a000000 - jump 90
+  0x00000086 - 0x1d - pop
+  0x00000087 - 0x1e - duplicate
+  0x00000088 - 0x1c00000000 - push 0
+  0x0000008d - 0x1f - swap
+  0x0000008e - 0x19 - store
+  0x0000008f - 0x1d - pop
+  0x00000090 - 0x1d - pop
+  0x00000091 - 0x17 - ret
 out_stdout: |
   outputbuffer[0]: []
   outputbuffer[1]: []
