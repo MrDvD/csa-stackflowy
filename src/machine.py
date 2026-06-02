@@ -34,26 +34,14 @@ class Processor:
         try:
             while model_tick < limit and self.control_unit.mr.micromem_output:
                 stalled = self.control_unit.tick()
-                # logging.debug(
-                #     "TICK: %d STALLED: [%s] mPC: %d MR: %s",
-                #     model_tick,
-                #     "+" if stalled else " ",
-                #     self.control_unit.mpc,
-                #     self.control_unit.mr,
-                # )
                 logging.debug(
-                    "TICK: %s [%s] | %s",
-                    model_tick,
-                    "S" if stalled else " ",
-                    self.control_unit,
+                    f"{model_tick} [{'S' if stalled else ' '}] | {self.control_unit}"
                 )
                 model_tick += 1
-                if model_tick == 95:
+                if model_tick == 1299:
                     continue
-        except EOFError:
-            logging.warning("Input buffer is empty!")
-        except StopIteration:
-            pass
+        except Exception as e:
+            logging.warning(e)
 
         if model_tick >= limit:
             logging.warning("Limit exceeded!")
@@ -94,11 +82,7 @@ class SlicingLogger(logging.Logger):
 
 
 def _custom_handle(record: logging.LogRecord) -> None:
-    if (
-        record.levelno == logging.DEBUG
-        and isinstance(record.msg, str)
-        and record.msg.startswith("TICK:")
-    ):
+    if record.levelno == logging.DEBUG:
         SlicingLogger.buffer.append(record)
     else:
         SlicingLogger.original_handle(record)

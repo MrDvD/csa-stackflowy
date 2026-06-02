@@ -292,4 +292,16 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     )
     reg_state(Opcode.OUT, idx)
 
+    ### IN
+    idx = add_instruction(
+        MicroInstruction(
+            io_output=True,
+            select_data_read=MuxDataReadSel.IO,
+            latch_td=True,
+            select_td=MuxTdSel.DATA_READ,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.IN, idx)
+
     return mprogram, state_decoder_map

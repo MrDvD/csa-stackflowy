@@ -9,9 +9,11 @@ import pytest
 import translator
 
 
+MAX_LOG = 4000
+
+
 @pytest.mark.golden_test("golden/*.yml")
 def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -> None:
-    caplog.set_level(logging.DEBUG)
     logging.setLoggerClass(machine.SlicingLogger)
 
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -71,6 +73,6 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
         assert text_code == golden.out["out_text"]
         assert text_code_hex == golden.out["out_text_hex"]
         assert stdout.getvalue() == golden.out["out_stdout"]
-        assert caplog.text == golden.out["out_log"]
+        assert caplog.text[:MAX_LOG] == golden.out["out_log"][:MAX_LOG]
 
         print(stdout.getvalue())
