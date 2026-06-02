@@ -1,5 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+addopts = "-rP"
 
 [tool.ruff]
 # Same as Black.

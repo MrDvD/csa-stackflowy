@@ -72,3 +72,5 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
         assert text_code_hex == golden.out["out_text_hex"]
         assert stdout.getvalue() == golden.out["out_stdout"]
         assert caplog.text == golden.out["out_log"]
+
+        print(stdout.getvalue())
