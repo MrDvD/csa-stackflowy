@@ -40,7 +40,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
                     port_id, ""
                 )
                 if isinstance(port_input, list):
-                    f.write("".join(map(str, port_input)))
+                    f.write("".join(map(chr, port_input)))
                 else:
                     f.write(port_input)
 
