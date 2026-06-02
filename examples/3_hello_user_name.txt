@@ -7,15 +7,18 @@
 ; (для проверки возможностей условной компиляции)
 @define USE_EXTENDED 1
 
-    .data
-_prompt:    "What is your name? "
+    .data@4
+_prompt:    "What is your name?"
 _greet_ext: "Hello, "
 _greet_sht: "Hi "
+_newline:   0xA
 _excl_addr: "!"
-_buf_addr:
+_buffer:    0x0
 
 @macro PRINT(addr) {
     ( : %addr )
+    ( : 3 )
+    ( addr, offset : addr - offset )
     <! _print_string_proc >
 }
 
@@ -29,7 +32,9 @@ _buf_addr:
 _main:
     $PRINT(_prompt)
 
-    $READ(_buf_addr)
+    $READ(_buffer)
+
+    $PRINT(_newline)
 
     @if (USE_EXTENDED == 1) {
         $PRINT(_greet_ext)
@@ -37,7 +42,7 @@ _main:
         $PRINT(_greet_sht)
     }
 
-    $PRINT(_buf_addr)
+    $PRINT(_buffer)
     $PRINT(_excl_addr)
     <...>
 
@@ -45,6 +50,8 @@ _print_string_proc:
 _print_loop:
     ( current_addr : current_addr, current_addr )
     ( addr : char ) <= MEM_DATA
+    ( : 0xFF )
+    ( full_char, mask : full_char & mask )
     ( char : char, char )
     ( : 0 )
     ( char, zero : char == zero )

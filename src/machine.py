@@ -38,7 +38,7 @@ class Processor:
                     f"{model_tick} [{'S' if stalled else ' '}] | {self.control_unit}"
                 )
                 model_tick += 1
-                if model_tick == 1299:
+                if model_tick == 726:
                     continue
         except Exception as e:
             logging.warning(e)

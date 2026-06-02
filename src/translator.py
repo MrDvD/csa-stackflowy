@@ -59,12 +59,11 @@ class Translator:
         labels: Dict[str, LabelDeclaration],
     ) -> DataSegment:
         content: bytearray = bytearray()
-        pc: int = -1
+        pc: int = 0
         for line in data_str.strip().splitlines():
             idx: int = 0
             line = line.strip()
             while idx < len(line):
-                pc += 1
                 s = String.regex.match(line, idx)
                 n = Numeral.regex.match(line, idx)
                 la = self.label_set.match(line, idx)
@@ -74,7 +73,6 @@ class Translator:
                     if label in labels:
                         raise Exception(f"Label duplication: {label}")
                     labels[label] = LabelDeclaration(segment_idx, pc)
-                    pc -= 1
                 elif s:
                     st = s.group(1)
                     idx += self._calc_left_space(line[idx:], offset=len(s.group(0)))
@@ -82,13 +80,19 @@ class Translator:
                     for i in range(0, len(st_bytes), 4):
                         chunk = st_bytes[i : i + 4]
                         padded = chunk.ljust(4, b"\x00")
-                        content.extend(
-                            struct.pack("<I", struct.unpack("<I", padded)[0])
-                        )
-                    pc += ((len(st_bytes) + 3) // 4) * 4
+                        word_val = struct.unpack("<I", padded)[0]
+                        content.extend(struct.pack("<I", word_val))
+                        pc += 4
                 elif n:
-                    idx += self._calc_left_space(line[idx:], offset=len(n.group(0)))
-                    content.extend(struct.pack("i", list(n.group(0))))
+                    token = n.group(0)
+                    idx += self._calc_left_space(line[idx:], offset=len(token))
+                    arg_type = ArgType.get(token)
+                    if arg_type == ArgType.HEX:
+                        val = int(token, 16)
+                    else:
+                        val = int(token, 10)
+                    content.extend(struct.pack("i", val))
+                    pc += 4
                 else:
                     raise Exception("Unknown data token")
         return DataSegment(address, content)

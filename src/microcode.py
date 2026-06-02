@@ -308,6 +308,20 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     )
     reg_state(Opcode.LOAD, idx)
 
+    ### Store
+    idx = add_instruction(
+        MicroInstruction(
+            memory_d_write=True,
+            latch_td=True,
+            latch_s=True,
+            select_td=MuxTdSel.DATA_STACK,
+            select_s=MuxSSel.PREV_TWO,
+            latch_d_stack=True,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.STORE, idx)
+
     ### OUT
     idx = add_instruction(
         MicroInstruction(

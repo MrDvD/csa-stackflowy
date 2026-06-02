@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-addopts = "-rP"
+addopts = "-rsP"
 log_level = "DEBUG"
 log_format = "%(message)s"
 log_cli_level = "DEBUG"

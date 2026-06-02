@@ -68,11 +68,12 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
         with open(target_code_hex, encoding="utf-8") as file:
             text_code_hex: str = file.read()
 
+        stdout_captured = stdout.getvalue()
+        print(stdout_captured)
+
         assert data_code == golden.out["out_data"]
         assert data_code_hex == golden.out["out_data_hex"]
         assert text_code == golden.out["out_text"]
         assert text_code_hex == golden.out["out_text_hex"]
-        assert stdout.getvalue() == golden.out["out_stdout"]
+        assert stdout_captured == golden.out["out_stdout"]
         assert caplog.text[:MAX_LOG] == golden.out["out_log"][:MAX_LOG]
-
-        print(stdout.getvalue())
