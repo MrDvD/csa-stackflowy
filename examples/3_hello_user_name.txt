@@ -1,11 +1,98 @@
-; Print hello
+; Приветствуем пользователя по имени
 
-@define ONE 1
-@define TWO 2
+@define STDIN  0
+@define STDOUT 2
+
+; полное / краткое приветствие
+; (для проверки возможностей условной компиляции)
+@define USE_EXTENDED 1
+
+    .data
+_prompt:    "What is your name? "
+_greet_ext: "Hello, "
+_greet_sht: "Hi "
+_excl_addr: "!"
+_buf_addr:
+
+@macro PRINT(addr) {
+    ( : %addr )
+    <! _print_string_proc >
+}
+
+@macro READ(buf) {
+    ( : %buf )
+    <! _read_string_proc >
+}
 
     .text
 
 _main:
-    (a, b : a + b)
-    ( _ : ) => OUT[1]
-    ( : ) => HALT
+    $PRINT(_prompt)
+
+    $READ(_buf_addr)
+
+    @if (USE_EXTENDED == 1) {
+        $PRINT(_greet_ext)
+    } @else {
+        $PRINT(_greet_sht)
+    }
+
+    $PRINT(_buf_addr)
+    $PRINT(_excl_addr)
+    <...>
+
+_print_string_proc:
+_print_loop:
+    ( current_addr : current_addr, current_addr )
+    ( addr : char ) <= MEM_DATA
+    ( char : char, char )
+    ( : 0 )
+    ( char, zero : char == zero )
+    <? _print_done>
+    
+    ( : $STDOUT )
+    ( char, port : ) => OUT
+    
+    ( : 1 )
+    ( current_addr, one : current_addr + one )
+    <_print_loop>
+
+_print_done:
+    ( char : )
+    ( current_addr : )
+    <RET>
+
+_read_string_proc:
+_read_loop:
+    ( current_addr : current_addr, current_addr )
+    ( : $STDIN )
+    ( port : char ) <= IN
+    
+    ( char : char, char )
+    ( : 10 )
+    ( char, nl : char == nl )
+    <? _read_done>
+    
+    ( char : char, char )
+    ( : 0 )
+    ( char, zero : char == zero )
+    <? _read_done>
+    
+    ( current_addr, char : char, current_addr )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : 1 )
+    ( current_addr, one : current_addr + one )
+    <_read_loop>
+
+_read_done:
+    ( char : )
+    
+    ( current_addr : current_addr, current_addr )
+    ( : 0 )
+    ( addr, zero : zero, addr )
+    ( val, addr : ) => MEM_DATA
+    
+    ( current_addr : )
+    ( base_addr : )
+    <RET>

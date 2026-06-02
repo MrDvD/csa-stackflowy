@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Tuple, List
-from isa import Comment, Macros
+from isa import Comment, Macros, Label
 
 
 class Preprocessor:
@@ -69,11 +69,11 @@ class Preprocessor:
                     args = [a.strip() for a in match.group(1).split(",") if a.strip()]
 
                     local_body = body
-                    local_body = re.sub(
-                        r"(?<![%$A-Za-z])(_\w+)",
-                        rf"\1_{self.macro_counter}",
-                        local_body,
-                    )
+                    local_labels = set(re.findall(rf"({Label.pattern}):", local_body))
+                    for label in local_labels:
+                        local_body = re.sub(
+                            rf"\b{label}\b", f"{label}_{self.macro_counter}", local_body
+                        )
 
                     for param, arg in zip(params, args):
                         local_body = local_body.replace(f"%{param}", arg)

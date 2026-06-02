@@ -1,0 +1,335 @@
+in_source: |-
+  ; Приветствуем пользователя по имени
+
+  @define STDIN  0
+  @define STDOUT 2
+
+  ; полное / краткое приветствие
+  ; (для проверки возможностей условной компиляции)
+  @define USE_EXTENDED 1
+
+      .data
+  _prompt:    "What is your name? "
+  _greet_ext: "Hello, "
+  _greet_sht: "Hi "
+  _excl_addr: "!"
+  _buf_addr:
+
+  @macro PRINT(addr) {
+      ( : %addr )
+      <! _print_string_proc >
+  }
+
+  @macro READ(buf) {
+      ( : %buf )
+      <! _read_string_proc >
+  }
+
+      .text
+
+  _main:
+      $PRINT(_prompt)
+
+      $READ(_buf_addr)
+
+      @if (USE_EXTENDED == 1) {
+          $PRINT(_greet_ext)
+      } @else {
+          $PRINT(_greet_sht)
+      }
+
+      $PRINT(_buf_addr)
+      $PRINT(_excl_addr)
+      <...>
+
+  _print_string_proc:
+  _print_loop:
+      ( current_addr : current_addr, current_addr )
+      ( addr : char ) <= MEM_DATA
+      ( char : char, char )
+      ( : 0 )
+      ( char, zero : char == zero )
+      <? _print_done>
+      
+      ( : $STDOUT )
+      ( char, port : ) => OUT
+      
+      ( : 1 )
+      ( current_addr, one : current_addr + one )
+      <_print_loop>
+
+  _print_done:
+      ( char : )
+      ( current_addr : )
+      <RET>
+
+  _read_string_proc:
+  _read_loop:
+      ( current_addr : current_addr, current_addr )
+      ( : $STDIN )
+      ( port : char ) <= IN
+      
+      ( char : char, char )
+      ( : 10 )
+      ( char, nl : char == nl )
+      <? _read_done>
+      
+      ( char : char, char )
+      ( : 0 )
+      ( char, zero : char == zero )
+      <? _read_done>
+      
+      ( current_addr, char : char, current_addr )
+      ( val, addr : ) => MEM_DATA
+      
+      ( : 1 )
+      ( current_addr, one : current_addr + one )
+      <_read_loop>
+
+  _read_done:
+      ( char : )
+      
+      ( current_addr : current_addr, current_addr )
+      ( : 0 )
+      ( addr, zero : zero, addr )
+      ( val, addr : ) => MEM_DATA
+      
+      ( current_addr : )
+      ( base_addr : )
+      <RET>
+port_mapped_io:
+  0: [77, 97, 107, 97, 114, 0]
+  1: []
+  2: []
+  3: []
+data_memory_size: 5000
+limit: 1500
+slice: ["tail", "200"]
+view: |-
+  PC: {pc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:hex} Td: {td:dec}
+out_data: !!binary |
+
+out_data_hex: |
+
+out_text: !!binary |
+  FAUAAAAcAAAAABoeHAAAAAAPFSIAAAAcAwAAABsUBQAAAAE=
+out_text_hex: |-
+  0 - 0x1405000000 - jump 5
+  5 - 0x1c00000000 - push 0
+  10 - 0x1a - in
+  11 - 0x1e - duplicate
+  12 - 0x1c00000000 - push 0
+  17 - 0x0f - is_==
+  18 - 0x1522000000 - jump_if 34
+  23 - 0x1c03000000 - push 3
+  28 - 0x1b - out
+  29 - 0x1405000000 - jump 5
+  34 - 0x01 - halt
+out_stdout: |
+  outputbuffer[0]: []
+  outputbuffer[1]: []
+  outputbuffer[2]: []
+  outputbuffer[3]: [73, 39, 109, 32, 97, 32, 99, 97, 116]
+
+  ticks: 514
+out_log: |
+  314 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  315 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  316 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  317 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  318 [ ] | PC: 00000005 IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  319 [ ] | PC: 00000005 IPF: 0000001c IR: jump  S: 00000000 Td: 0
+  320 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  321 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  322 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  323 [ ] | PC: 0000000a IPF: 00000000 IR: push  S: 00000000 Td: 0
+  324 [ ] | PC: 0000000a IPF: 00001e1a IR: push  S: 00000000 Td: 0
+  325 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  326 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  327 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 32
+  328 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 32
+  329 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 32
+  330 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 32
+  331 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000020 Td: 32
+  332 [ ] | PC: 0000000c IPF: 0000001c IR: dupli S: 00000020 Td: 32
+  333 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000020 Td: 32
+  334 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000020 Td: 32
+  335 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000020 Td: 32
+  336 [ ] | PC: 00000011 IPF: 00000000 IR: push  S: 00000020 Td: 0
+  337 [ ] | PC: 00000011 IPF: 0022150f IR: push  S: 00000020 Td: 0
+  338 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000020 Td: 0
+  339 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000020 Td: 0
+  340 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000020 Td: 0
+  341 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000020 Td: 0
+  342 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000020 Td: 0
+  343 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000020 Td: 0
+  344 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000020 Td: 0
+  345 [ ] | PC: 00000017 IPF: 00000022 IR: jump_ S: 00000000 Td: 32
+  346 [ ] | PC: 00000017 IPF: 0000001c IR: jump_ S: 00000000 Td: 32
+  347 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 32
+  348 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 32
+  349 [ ] | PC: 00000018 IPF: 00000003 IR: push  S: 00000000 Td: 32
+  350 [ ] | PC: 0000001c IPF: 00000003 IR: push  S: 00000020 Td: 3
+  351 [ ] | PC: 0000001c IPF: 0005141b IR: push  S: 00000020 Td: 3
+  352 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000020 Td: 3
+  353 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000020 Td: 3
+  354 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  355 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  356 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  357 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  358 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  359 [ ] | PC: 00000005 IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  360 [ ] | PC: 00000005 IPF: 0000001c IR: jump  S: 00000000 Td: 0
+  361 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  362 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  363 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  364 [ ] | PC: 0000000a IPF: 00000000 IR: push  S: 00000000 Td: 0
+  365 [ ] | PC: 0000000a IPF: 00001e1a IR: push  S: 00000000 Td: 0
+  366 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  367 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  368 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 99
+  369 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 99
+  370 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 99
+  371 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 99
+  372 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000063 Td: 99
+  373 [ ] | PC: 0000000c IPF: 0000001c IR: dupli S: 00000063 Td: 99
+  374 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000063 Td: 99
+  375 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000063 Td: 99
+  376 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000063 Td: 99
+  377 [ ] | PC: 00000011 IPF: 00000000 IR: push  S: 00000063 Td: 0
+  378 [ ] | PC: 00000011 IPF: 0022150f IR: push  S: 00000063 Td: 0
+  379 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000063 Td: 0
+  380 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000063 Td: 0
+  381 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000063 Td: 0
+  382 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000063 Td: 0
+  383 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000063 Td: 0
+  384 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000063 Td: 0
+  385 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000063 Td: 0
+  386 [ ] | PC: 00000017 IPF: 00000022 IR: jump_ S: 00000000 Td: 99
+  387 [ ] | PC: 00000017 IPF: 0000001c IR: jump_ S: 00000000 Td: 99
+  388 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 99
+  389 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 99
+  390 [ ] | PC: 00000018 IPF: 00000003 IR: push  S: 00000000 Td: 99
+  391 [ ] | PC: 0000001c IPF: 00000003 IR: push  S: 00000063 Td: 3
+  392 [ ] | PC: 0000001c IPF: 0005141b IR: push  S: 00000063 Td: 3
+  393 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000063 Td: 3
+  394 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000063 Td: 3
+  395 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  396 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  397 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  398 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  399 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  400 [ ] | PC: 00000005 IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  401 [ ] | PC: 00000005 IPF: 0000001c IR: jump  S: 00000000 Td: 0
+  402 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  403 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  404 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  405 [ ] | PC: 0000000a IPF: 00000000 IR: push  S: 00000000 Td: 0
+  406 [ ] | PC: 0000000a IPF: 00001e1a IR: push  S: 00000000 Td: 0
+  407 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  408 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  409 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 97
+  410 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 97
+  411 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 97
+  412 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 97
+  413 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000061 Td: 97
+  414 [ ] | PC: 0000000c IPF: 0000001c IR: dupli S: 00000061 Td: 97
+  415 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000061 Td: 97
+  416 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000061 Td: 97
+  417 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000061 Td: 97
+  418 [ ] | PC: 00000011 IPF: 00000000 IR: push  S: 00000061 Td: 0
+  419 [ ] | PC: 00000011 IPF: 0022150f IR: push  S: 00000061 Td: 0
+  420 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000061 Td: 0
+  421 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000061 Td: 0
+  422 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000061 Td: 0
+  423 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000061 Td: 0
+  424 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000061 Td: 0
+  425 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000061 Td: 0
+  426 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000061 Td: 0
+  427 [ ] | PC: 00000017 IPF: 00000022 IR: jump_ S: 00000000 Td: 97
+  428 [ ] | PC: 00000017 IPF: 0000001c IR: jump_ S: 00000000 Td: 97
+  429 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 97
+  430 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 97
+  431 [ ] | PC: 00000018 IPF: 00000003 IR: push  S: 00000000 Td: 97
+  432 [ ] | PC: 0000001c IPF: 00000003 IR: push  S: 00000061 Td: 3
+  433 [ ] | PC: 0000001c IPF: 0005141b IR: push  S: 00000061 Td: 3
+  434 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000061 Td: 3
+  435 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000061 Td: 3
+  436 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  437 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  438 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  439 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  440 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  441 [ ] | PC: 00000005 IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  442 [ ] | PC: 00000005 IPF: 0000001c IR: jump  S: 00000000 Td: 0
+  443 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  444 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  445 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  446 [ ] | PC: 0000000a IPF: 00000000 IR: push  S: 00000000 Td: 0
+  447 [ ] | PC: 0000000a IPF: 00001e1a IR: push  S: 00000000 Td: 0
+  448 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  449 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  450 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 116
+  451 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 116
+  452 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 116
+  453 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 116
+  454 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000074 Td: 116
+  455 [ ] | PC: 0000000c IPF: 0000001c IR: dupli S: 00000074 Td: 116
+  456 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000074 Td: 116
+  457 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000074 Td: 116
+  458 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000074 Td: 116
+  459 [ ] | PC: 00000011 IPF: 00000000 IR: push  S: 00000074 Td: 0
+  460 [ ] | PC: 00000011 IPF: 0022150f IR: push  S: 00000074 Td: 0
+  461 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000074 Td: 0
+  462 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000074 Td: 0
+  463 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000074 Td: 0
+  464 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000074 Td: 0
+  465 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000074 Td: 0
+  466 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000074 Td: 0
+  467 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000074 Td: 0
+  468 [ ] | PC: 00000017 IPF: 00000022 IR: jump_ S: 00000000 Td: 116
+  469 [ ] | PC: 00000017 IPF: 0000001c IR: jump_ S: 00000000 Td: 116
+  470 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 116
+  471 [ ] | PC: 00000018 IPF: 00000000 IR: push  S: 00000000 Td: 116
+  472 [ ] | PC: 00000018 IPF: 00000003 IR: push  S: 00000000 Td: 116
+  473 [ ] | PC: 0000001c IPF: 00000003 IR: push  S: 00000074 Td: 3
+  474 [ ] | PC: 0000001c IPF: 0005141b IR: push  S: 00000074 Td: 3
+  475 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000074 Td: 3
+  476 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000074 Td: 3
+  477 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  478 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 0
+  479 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  480 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  481 [ ] | PC: 0000001e IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  482 [ ] | PC: 00000005 IPF: 00000005 IR: jump  S: 00000000 Td: 0
+  483 [ ] | PC: 00000005 IPF: 0000001c IR: jump  S: 00000000 Td: 0
+  484 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  485 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  486 [ ] | PC: 00000006 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  487 [ ] | PC: 0000000a IPF: 00000000 IR: push  S: 00000000 Td: 0
+  488 [ ] | PC: 0000000a IPF: 00001e1a IR: push  S: 00000000 Td: 0
+  489 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  490 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  491 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  492 [ ] | PC: 0000000b IPF: 0000001e IR: in    S: 00000000 Td: 0
+  493 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 0
+  494 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 0
+  495 [ ] | PC: 0000000c IPF: 00000000 IR: dupli S: 00000000 Td: 0
+  496 [ ] | PC: 0000000c IPF: 0000001c IR: dupli S: 00000000 Td: 0
+  497 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000000 Td: 0
+  498 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000000 Td: 0
+  499 [ ] | PC: 0000000d IPF: 00000000 IR: push  S: 00000000 Td: 0
+  500 [ ] | PC: 00000011 IPF: 00000000 IR: push  S: 00000000 Td: 0
+  501 [ ] | PC: 00000011 IPF: 0022150f IR: push  S: 00000000 Td: 0
+  502 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000000 Td: 0
+  503 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000000 Td: 0
+  504 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000000 Td: 1
+  505 [ ] | PC: 00000012 IPF: 00002215 IR: is_== S: 00000000 Td: 1
+  506 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000000 Td: 1
+  507 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000000 Td: 1
+  508 [ ] | PC: 00000013 IPF: 00000022 IR: jump_ S: 00000000 Td: 1
+  509 [ ] | PC: 00000022 IPF: 00000022 IR: jump_ S: 00000000 Td: 0
+  510 [ ] | PC: 00000022 IPF: 00000001 IR: jump_ S: 00000000 Td: 0
+  511 [ ] | PC: 00000023 IPF: 00000000 IR: halt  S: 00000000 Td: 0
+  512 [ ] | PC: 00000023 IPF: 00000000 IR: halt  S: 00000000 Td: 0
+  513 [ ] | PC: 00000023 IPF: 00000000 IR: halt  S: 00000000 Td: 0

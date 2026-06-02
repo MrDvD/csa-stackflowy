@@ -88,6 +88,9 @@ class State:
     instruction: Opcode
     td_zero_bit: bool
 
+    def __str__(self) -> str:
+        return f"({self.instruction}, {self.td_zero_bit})"
+
 
 def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     mprogram: List[MicroInstruction] = list()

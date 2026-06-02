@@ -82,7 +82,7 @@ class ControlUnit:
         )
         if state in self.state_decoder_map:
             return self.state_decoder_map[state]
-        raise Exception("Unknown state occurred")
+        raise Exception(f"Unknown state occurred: {state}")
 
     def latch_r_stack(self, sel: MuxRStack) -> List[int]:
         next_r_stack: List[int] = list()
