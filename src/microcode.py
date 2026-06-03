@@ -275,15 +275,28 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     add_binary_op(Opcode.AND, AluOp.AND)
     add_binary_op(Opcode.OR, AluOp.OR)
     add_binary_op(Opcode.XOR, AluOp.XOR)
-    add_binary_op(Opcode.SHLT, AluOp.SHLT)
-    add_binary_op(Opcode.SHRT, AluOp.SHRT)
-    add_binary_op(Opcode.INV, AluOp.NOT)
-    add_binary_op(Opcode.NEG, AluOp.NEG)
     add_binary_op(Opcode.EQ, AluOp.EQ)
     add_binary_op(Opcode.GT, AluOp.GT)
     add_binary_op(Opcode.LT, AluOp.LT)
     add_binary_op(Opcode.GEQ, AluOp.GEQ)
     add_binary_op(Opcode.LEQ, AluOp.LEQ)
+
+    ### UNARY ALU OPERATIONS
+    def add_unary_op(opcode: Opcode, alu: AluOp) -> None:
+        idx = add_instruction(
+            MicroInstruction(
+                latch_td=True,
+                alu_op=alu,
+                select_td=MuxTdSel.ALU_RESULT,
+                select_mpc=MuxMpcSel.START,
+            )
+        )
+        reg_state(opcode, idx)
+
+    add_unary_op(Opcode.SHLT, AluOp.SHLT)
+    add_unary_op(Opcode.SHRT, AluOp.SHRT)
+    add_unary_op(Opcode.INV, AluOp.NOT)
+    add_unary_op(Opcode.NEG, AluOp.NEG)
 
     ### SWAP
     idx = add_instruction(

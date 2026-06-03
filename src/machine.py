@@ -26,8 +26,13 @@ class Processor:
                 self.control_unit.rom_instructions[idx] = byte
 
     def load_data(self, data_code: bytes) -> None:
-        for idx, byte in enumerate(data_code):
-            self.data_path.data_memory.write(idx, byte)
+        for idx in range(0, len(data_code), 4):
+            chunk = data_code[idx : idx + 4]
+            if len(chunk) < 4:
+                chunk = chunk.ljust(4, b"\x00")
+
+            data_in = int.from_bytes(chunk, byteorder="big")
+            self.data_path.data_memory.write(idx, data_in)
 
     def run(self, limit: int) -> tuple[str, int]:
         model_tick: int = 0
@@ -41,7 +46,7 @@ class Processor:
                 if model_tick == 726:
                     continue
         except Exception as e:
-            logging.warning(e)
+            raise e
 
         if model_tick >= limit:
             logging.warning("Limit exceeded!")

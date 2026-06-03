@@ -60,7 +60,10 @@ class Memory:
 
     def write(self, addr: int, data_in: int):
         addr = addr % len(self.memory)
-        self.memory[addr] = data_in
+        four_bytes = data_in.to_bytes(4, byteorder="big")
+        for i, byte in enumerate(four_bytes):
+            target_addr = (addr + i) % len(self.memory)
+            self.memory[target_addr] = byte
 
     def read(self, addr: int) -> int:
         self.busy = False

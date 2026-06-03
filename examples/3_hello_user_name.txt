@@ -22,6 +22,11 @@ _buffer:    0x0
     <! _print_string_proc >
 }
 
+@macro PRINT_OFFSET(addr) {
+    ( : %addr )
+    <! _print_string_proc >
+}
+
 @macro READ(buf) {
     ( : %buf )
     <! _read_string_proc >
@@ -42,7 +47,7 @@ _main:
         $PRINT(_greet_sht)
     }
 
-    $PRINT(_buffer)
+    $PRINT_OFFSET(_buffer)
     $PRINT(_excl_addr)
     <...>
 
@@ -72,20 +77,25 @@ _print_done:
 _read_string_proc:
 _read_loop:
     ( current_addr : current_addr, current_addr )
+    ( current_addr : current_addr, current_addr )
     ( : $STDIN )
     ( port : char ) <= IN
-    
-    ( char : char, char )
-    ( : 10 )
-    ( char, nl : char == nl )
-    <? _read_done>
     
     ( char : char, char )
     ( : 0 )
     ( char, zero : char == zero )
     <? _read_done>
     
+    ; read-modify-write
+    
     ( current_addr, char : char, current_addr )
+    ( addr : old_word ) <= MEM_DATA
+    ( : 0xFF )
+    ( m : ~m )
+    ( w, m : w & m )
+    ( char, cleared_word : cleared_word, char )
+    ( cleared_word, char : cleared_word | char )
+    ( current_addr, final_word : final_word, current_addr )
     ( val, addr : ) => MEM_DATA
     
     ( : 1 )
@@ -97,7 +107,15 @@ _read_done:
     
     ( current_addr : current_addr, current_addr )
     ( : 0 )
-    ( addr, zero : zero, addr )
+    
+    ( current_addr, zero : zero, current_addr )
+    ( addr : old_word ) <= MEM_DATA
+    ( : 0xFF )
+    ( m : ~m )
+    ( w, m : w & m )
+    ( zero, cleared_word : cleared_word, zero )
+    ( cleared_word, zero : cleared_word | zero )
+    ( current_addr, final_word : final_word, current_addr )
     ( val, addr : ) => MEM_DATA
     
     ( current_addr : )

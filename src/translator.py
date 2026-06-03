@@ -41,7 +41,7 @@ class Translator:
         self.one_left_arg = re.compile(rf"\(\s*({Variable.pattern})\s*:")
         self.no_left_args = re.compile(r"\(\s*:")
         self.two_right_args = re.compile(
-            rf"({Variable.pattern})\s*(,|\+|-|==|>=?|<=?|\+\*|\+\/|&|\||\^)\s*({Variable.pattern})\s*\)"
+            rf"({Variable.pattern})\s*(,|\+|-|==|>=?|<=?|\*|\/|&|\||\^)\s*({Variable.pattern})\s*\)"
         )
         self.one_right_arg = re.compile(
             rf"(-|~|<<|>>)?\s*({Variable.pattern}|{Numeral.pattern}|{Label.pattern})\s*\)"
@@ -186,7 +186,7 @@ class Translator:
                                 ):
                                     instructions.append(Instruction(Opcode.SUB))
                                     continue
-                            case "+*":
+                            case "*":
                                 if (
                                     larg1 == rarg1
                                     and larg2 == rarg2
@@ -195,7 +195,7 @@ class Translator:
                                 ):
                                     instructions.append(Instruction(Opcode.MUL))
                                     continue
-                            case "+/":
+                            case "/":
                                 if larg1 == rarg1 and larg2 == rarg2:
                                     instructions.append(Instruction(Opcode.DIV))
                                     continue
