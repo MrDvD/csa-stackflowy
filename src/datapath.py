@@ -68,7 +68,9 @@ class Memory:
     def read(self, addr: int) -> int:
         self.busy = False
         addr = addr % len(self.memory)
-        four_bytes = self.memory[addr : addr + 4]
+        four_bytes = bytearray(4)
+        for i in range(4):
+            four_bytes[i] = self.memory[(addr + i) % len(self.memory)]
         return int.from_bytes(four_bytes, byteorder="big")
 
     def tick(self, output: bool, write: bool) -> None:
