@@ -138,6 +138,7 @@ class ControlUnit:
         return self.mprogram[mpc % len(self.mprogram)]
 
     def cache_write(self) -> None:
+        self.rom_busy = False
         offset = self.pc & 0x3
         match self.mr.select_i_prefetch:
             case MuxIPrefetch.CACHE:
@@ -234,22 +235,18 @@ class ControlUnit:
         else:
             rom_ready = True
 
-        # Анализ линий заморозки (Hardware Stall / Clock Gating)
+        # анализ линий заморозки
         rom_stalled = memory_i_output and not rom_ready
         ram_stalled = self.mr.memory_d_output and not self.data_path.data_memory.ready
         port_num: int = self.data_path.td & 0x3
         io_device = self.data_path.io_devices[port_num]
         io_stalled = self.mr.io_output and not io_device.ready
 
-        # Если ХОТЯ БЫ ОДНО активное устройство занято — тактовый импульс до регистров CPU не доходит!
+        # блокируем тактовый импульс до регистров процессора
         if rom_stalled or ram_stalled or io_stalled:
             return True
-
-        # сбрасываем триггер занятости Instruction ROM
-        # (RAM и IO сбросятся внутри _read_data_mux в DataPath)
-        if memory_i_output and rom_ready:
+        elif memory_i_output and rom_ready:
             self.cache_write()
-            self.rom_busy = False
             return True
 
         return False

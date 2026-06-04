@@ -36,9 +36,7 @@ class MicroInstruction:
     latch_sr: bool = False
     select_sr: MuxSrSel = MuxSrSel.ALU_RESULT
     memory_d_output: bool = False
-    memory_i_output: bool = False
     memory_d_write: bool = False
-    cache_i_write: bool = False
     io_output: bool = False
     io_write: bool = False
     select_data_read: MuxDataReadSel = MuxDataReadSel.MEM_DATA

@@ -110,7 +110,7 @@ out_stdout: |
   outputbuffer[2]: []
   outputbuffer[3]: []
   
-  ticks: 280
+  ticks: 290
 out_log: |
   0 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: 00 S: 00000000 Td: 00000000
   1 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: 00 S: 00000000 Td: 00000000

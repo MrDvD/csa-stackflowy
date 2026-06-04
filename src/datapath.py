@@ -24,9 +24,11 @@ class IODevice:
         return 0
 
     def write(self, data_in: int):
+        self.busy = False
         self.output_buffer.append(data_in & 0xFF)
 
     def read(self) -> int:
+        self.busy = False
         if len(self.input_buffer) == 0:
             raise Exception("Input buffer is empty!")
         return self.input_buffer.pop(0) & 0xFF
@@ -60,6 +62,7 @@ class Memory:
         return 0
 
     def write(self, addr: int, data_in: int):
+        self.busy = False
         addr = addr % len(self.memory)
         four_bytes = data_in.to_bytes(4, byteorder="little")
         for i, byte in enumerate(four_bytes):
