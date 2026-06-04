@@ -61,7 +61,7 @@ class Memory:
 
     def write(self, addr: int, data_in: int):
         addr = addr % len(self.memory)
-        four_bytes = data_in.to_bytes(4, byteorder="big")
+        four_bytes = data_in.to_bytes(4, byteorder="little")
         for i, byte in enumerate(four_bytes):
             target_addr = (addr + i) % len(self.memory)
             self.memory[target_addr] = byte
@@ -72,7 +72,7 @@ class Memory:
         four_bytes = bytearray(4)
         for i in range(4):
             four_bytes[i] = self.memory[(addr + i) % len(self.memory)]
-        return int.from_bytes(four_bytes, byteorder="big")
+        return int.from_bytes(four_bytes, byteorder="little")
 
     def tick(self, output: bool, write: bool) -> None:
         if self.busy:

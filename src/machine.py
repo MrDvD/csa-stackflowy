@@ -32,7 +32,7 @@ class Processor:
             if len(chunk) < 4:
                 chunk = chunk.ljust(4, b"\x00")
 
-            data_in = int.from_bytes(chunk, byteorder="big")
+            data_in = int.from_bytes(chunk, byteorder="little")
             self.data_path.data_memory.write(idx, data_in)
 
     def run(self, limit: int) -> tuple[str, int]:

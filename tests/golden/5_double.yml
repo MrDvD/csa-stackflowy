@@ -52,7 +52,7 @@ slice: "all"
 view: |-
   PC: {pc:hex} mPC: {mpc:hex} IPF: {iprefetch:hex} IR: {ir:hex} S: {s:hex} Td: {td:hex}
 out_data: !!binary |
-  4eJD3x9aPgIPxdBewGk0M/GoFD3fw3I1AAAAAAAAAAA=
+  4eJD3x9aPgIPxdBewGk0M/CnFD7fw3I1AAAAAAAAAAA=
 out_data_hex: |-
   0 - 0xe1 - .
   1 - 0xe2 - .
@@ -70,10 +70,10 @@ out_data_hex: |-
   13 - 0x69 - i
   14 - 0x34 - 4
   15 - 0x33 - 3
-  16 - 0xf1 - .
-  17 - 0xa8 - .
+  16 - 0xf0 - .
+  17 - 0xa7 - .
   18 - 0x14 - .
-  19 - 0x3d - =
+  19 - 0x3e - >
   20 - 0xdf - .
   21 - 0xc3 - .
   22 - 0x72 - r

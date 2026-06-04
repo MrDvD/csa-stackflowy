@@ -17,13 +17,6 @@ _buffer:    0x0
 
 @macro PRINT(addr) {
     ( : %addr )
-    ( : 3 )
-    ( addr, offset : addr - offset )
-    <! _print_string_proc >
-}
-
-@macro PRINT_OFFSET(addr) {
-    ( : %addr )
     <! _print_string_proc >
 }
 
@@ -47,7 +40,7 @@ _main:
         $PRINT(_greet_sht)
     }
 
-    $PRINT_OFFSET(_buffer)
+    $PRINT(_buffer)
     $PRINT(_excl_addr)
     <...>
 
