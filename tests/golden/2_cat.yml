@@ -26,15 +26,15 @@ port_mapped_io:
   1: []
   2: []
   3: []
-data_memory_size: 5000
+data_memory_size: 16
 limit: 1500
 slice: ["tail", "200"]
 view: |-
   PC: {pc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:hex} Td: {td:hex}
 out_data: !!binary |
-
-out_data_hex: |
-
+  AAAAAAAAAAAAAAAAAAAAAA==
+out_data_hex: |-
+  0...15 - 0x00 - .
 out_text: !!binary |
   FAUAAAAcAAAAABoeHAAAAAAPFSIAAAAcAwAAABsUBQAAAAE=
 out_text_hex: |-
@@ -54,7 +54,7 @@ out_stdout: |
   outputbuffer[1]: []
   outputbuffer[2]: []
   outputbuffer[3]: [73, 39, 109, 32, 97, 32, 99, 97, 116]
-
+  
   ticks: 514
 out_log: |
   314 [ ] | PC: 0000001d IPF: 00000514 IR: out   S: 00000000 Td: 00000000

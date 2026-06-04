@@ -1,5 +1,6 @@
 from datapath import DataPath
 from controlunit import ControlUnit
+from isa import Decoder
 from microcode import generate_microprogram
 from typing import List
 import logging
@@ -97,8 +98,7 @@ logging.root.handle = _custom_handle
 
 
 def main(
-    data_file: str,
-    text_file: str,
+    target_prefix: str,
     input_file_1: str,
     input_file_2: str,
     input_file_3: str,
@@ -107,10 +107,10 @@ def main(
     limit: int,
     view_template: str,
 ) -> None:
-    with open(text_file, "rb") as file:
+    with open(target_prefix + "_code.bin", "rb") as file:
         text_code: bytes = file.read()
 
-    with open(data_file, "rb") as file:
+    with open(target_prefix + "_data.bin", "rb") as file:
         data_code: bytes = file.read()
 
     input_data: List[List[int]] = list()
@@ -134,21 +134,26 @@ def main(
     finally:
         SlicingLogger.flush_sliced()
 
+    final_mem_bytes = bytes(processor.data_path.data_memory.memory)
+    with open(target_prefix + "_data_final.bin", "wb") as f:
+        f.write(final_mem_bytes)
+    with open(target_prefix + "_data_final.hex", "w", encoding="utf-8") as f:
+        f.write(Decoder.data_to_hex(final_mem_bytes))
+
     print("".join(output))
     print("ticks:", ticks)
 
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    if len(sys.argv) != 10:
+    if len(sys.argv) != 9:
         print(
-            "Wrong arguments: machine.py <data_file> <text_file> <input_file_1> ... <input_file_4> <data_mem_size> <limit> <view_template>"
+            "Wrong arguments: machine.py <target_prefix> <input_file_1> ... <input_file_4> <data_mem_size> <limit> <view_template>"
         )
         sys.exit(1)
     (
         _,
-        data_file_arg,
-        text_file_arg,
+        target_prefix,
         input_file_1,
         input_file_2,
         input_file_3,
@@ -164,8 +169,7 @@ if __name__ == "__main__":
         print("Wrong arguments: <limit> is not a decimal number")
         sys.exit(1)
     main(
-        data_file_arg,
-        text_file_arg,
+        target_prefix,
         input_file_1,
         input_file_2,
         input_file_3,

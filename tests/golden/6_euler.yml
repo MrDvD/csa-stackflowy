@@ -43,9 +43,10 @@ slice: "all"
 view: |-
   PC: {pc:hex} mPC: {mpc:hex} IPF: {iprefetch:hex} IR: {ir:hex} S: {s:hex} Td: {td:dec}
 out_data: !!binary |
-
-out_data_hex: |
-
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAA==
+out_data_hex: |-
+  0...63 - 0x00 - .
 out_text: !!binary |
   FAUAAAAcZAAAAB4eHhwBAAAABQYfHAEAAAAEBh8cAwAAAAYcAgAAAAQGHAwAAAAHAQ==
 out_text_hex: |-
@@ -75,7 +76,7 @@ out_stdout: |
   outputbuffer[1]: []
   outputbuffer[2]: []
   outputbuffer[3]: []
-
+  
   ticks: 234
 out_log: |
   0 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: 00 S: 00000000 Td: 0

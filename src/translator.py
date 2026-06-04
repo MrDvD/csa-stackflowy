@@ -91,7 +91,7 @@ class Translator:
                         val = int(token, 16)
                     else:
                         val = int(token, 10)
-                    content.extend(struct.pack("i", val))
+                    content.extend(struct.pack("<I", val & 0xFFFFFFFF))
                     pc += 4
                 else:
                     raise Exception("Unknown data token")

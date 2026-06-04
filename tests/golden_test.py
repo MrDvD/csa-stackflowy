@@ -27,10 +27,6 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
         }
 
         target_prefix: str = os.path.join(tmpdirname, "target")
-        target_data: str = target_prefix + "_data.bin"
-        target_data_hex: str = target_prefix + "_data.hex"
-        target_code: str = target_prefix + "_code.bin"
-        target_code_hex: str = target_prefix + "_code.hex"
 
         with open(source, "w", encoding="utf-8") as file:
             file.write(golden["in_source"])
@@ -48,8 +44,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
             translator.main(source, target_prefix)
             machine.SlicingLogger.slice_cfg = golden.get("slice", "all")
             machine.main(
-                target_data,
-                target_code,
+                target_prefix,
                 port_streams[0],
                 port_streams[1],
                 port_streams[2],
@@ -59,21 +54,21 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
                 golden["view"],
             )
 
-        with open(target_data, "rb") as file:
-            data_code: bytes = file.read()
-        with open(target_data_hex, encoding="utf-8") as file:
-            data_code_hex: str = file.read()
-        with open(target_code, "rb") as file:
-            text_code: bytes = file.read()
-        with open(target_code_hex, encoding="utf-8") as file:
-            text_code_hex: str = file.read()
+        with open(target_prefix + "_data_final.bin", "rb") as file:
+            data: bytes = file.read()
+        with open(target_prefix + "_data_final.hex", encoding="utf-8") as file:
+            data_hex: str = file.read()
+        with open(target_prefix + "_code.bin", "rb") as file:
+            text: bytes = file.read()
+        with open(target_prefix + "_code.hex", encoding="utf-8") as file:
+            text_hex: str = file.read()
 
         stdout_captured = stdout.getvalue()
         print(stdout_captured)
 
-        assert data_code == golden.out["out_data"]
-        assert data_code_hex == golden.out["out_data_hex"]
-        assert text_code == golden.out["out_text"]
-        assert text_code_hex == golden.out["out_text_hex"]
+        assert data == golden.out["out_data"]
+        assert data_hex == golden.out["out_data_hex"]
+        assert text == golden.out["out_text"]
+        assert text_hex == golden.out["out_text_hex"]
         assert stdout_captured == golden.out["out_stdout"]
         assert caplog.text[:MAX_LOG] == golden.out["out_log"][:MAX_LOG]

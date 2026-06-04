@@ -361,4 +361,34 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     )
     reg_state(Opcode.IN, idx)
 
+    ### POPF
+    idx = add_instruction(
+        MicroInstruction(
+            alu_r_sel=MuxAluRightSel.SR,
+            alu_l_sel=MuxAluLeftSel.ZERO,
+            latch_td=True,
+            select_td=MuxTdSel.ALU_RESULT,
+            latch_s=True,
+            latch_d_stack=True,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.LFLG, idx)
+
+    ### PUSHF
+    idx = add_instruction(
+        MicroInstruction(
+            latch_sr=True,
+            select_sr=MuxSrSel.ALU_RESULT,
+            alu_l_sel=MuxAluLeftSel.ZERO,
+            latch_td=True,
+            select_td=MuxTdSel.S,
+            select_s=MuxSSel.PREV,
+            latch_s=True,
+            latch_d_stack=True,
+            select_mpc=MuxMpcSel.START,
+        )
+    )
+    reg_state(Opcode.SFLG, idx)
+
     return mprogram, state_decoder_map

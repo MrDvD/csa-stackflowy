@@ -48,6 +48,7 @@ class Memory:
     def __init__(self, mem_size: int, delay: int) -> None:
         self.busy: bool = False
         self.countdown: int = 0
+        assert mem_size % 4 == 0, "Memory size must be a multiple of 4"
         self.memory: List[int] = [0] * mem_size
         self.delay = delay
         assert delay > 0, "Memory delay should be positive"

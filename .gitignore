@@ -5,6 +5,8 @@ venv/
 .vscode/
 .ruff_cache/
 
+output.py
+
 *.bin
 *.hex
 
