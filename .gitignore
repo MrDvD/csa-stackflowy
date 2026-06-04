@@ -1,5 +1,12 @@
 temp/
 __pycache__
+.pytest_cache
+venv/
+.vscode/
+.ruff_cache/
+
+output.py
+
 *.bin
 *.hex
 
@@ -7,3 +14,4 @@ __pycache__
 *.aux
 *.toc
 *.pdf
+*.coverage

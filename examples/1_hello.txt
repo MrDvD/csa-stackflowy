@@ -1,28 +1,31 @@
 ; Проходимся по массиву в памяти и выводим строку (cstr, не массив напрямую)
 
-@define WORLD_ADDR 0x1000
+@define WORLD_ADDR 0x300
 
-    .data@500
+    .data@200
     "Hello "
 
     .data@$WORLD_ADDR
     "World"
 
 @macro PRINT_CSTR(addr) { ; add macro name + idx so inner labels won't overlap
-_print_loop:
     ( : %addr )
+_print_loop:
     ( addr : addr, addr )
     ( : 1 )
     ( addr, one : addr + one )
     ( curr_addr, new_addr : new_addr, curr_addr )
     ( addr : char ) <= MEM_DATA
     ( char : char, char )
+    ( : 0xFF )
+    ( char_word, mask : char_word & mask )
     ( : 0 )
     ( char, zero : char == zero )
-    ( : 1 ) ; load constant port number
-    ( is_null, port_num : port_num, is_null ) => ? _print_done
+    ( : 1 )       ; load constant port number
+    ( is_null, port_num : port_num, is_null )
+    <? _print_done>
     ( char, port_num : ) => OUT
-    ( : ) => _print_loop
+    <_print_loop>
 _print_done:
     ( addr : )
 }
@@ -30,6 +33,6 @@ _print_done:
     .text
 
 _main:
-    $PRINT_CSTR(500) ; using defined macros
+    $PRINT_CSTR(200)  ; using defined macros
     $PRINT_CSTR($WORLD_ADDR)
-    ( : ) => HALT
+    <...>

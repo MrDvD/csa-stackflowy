@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+FAILED=0
+TESTS=0
+
+RUN_CODE_CHECK=$(git status --porcelain src | grep -E '^M')
+if [ -n "$RUN_CODE_CHECK" ]; then
+  let 'TESTS++'
+
+  echo -e "${BLUE}🔍 Running formatter (ruff format)...${NC}"
+  sh .githooks/check-format.sh >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Formatting failed!${NC}"
+    FAILED=1
+  else
+    echo -e "${GREEN}✅ Formatting passed.${NC}"
+  fi
+
+  echo -e "${BLUE}🔍 Running linter (ruff check)...${NC}"
+  sh .githooks/check-lint.sh >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Linting check failed!${NC}"
+    FAILED=1
+  else
+    echo -e "${GREEN}✅ Linting passed.${NC}"
+  fi
+fi
+
+if [ $FAILED -eq 1 ]; then
+  echo -e "\n${RED}🛑 Operation halted. Please fix the issues above before committing.${NC}"
+  exit 1
+fi
+
+if [ $TESTS -ne 0 ]; then
+  echo -e "\n${GREEN}🚀 All checks passed!${NC}"
+fi

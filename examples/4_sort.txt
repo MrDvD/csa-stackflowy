@@ -1,11 +1,384 @@
-; Вводим массив, выводим отсортированный вариант
+; Сортируем список чисел, ввод-вывод в ASCII-формате
+; Исходная строка может содержать отрицательные числа: '17 -7 102 0 -89 15\0'
 
-@define ONE 1
-@define TWO 2
+@define STDIN   1
+@define STDOUT  0
+
+@define ARR_START      0x2000   ; Начало массива отсортированных бинарных чисел
+@define TMP_VAR        0x3000   ; Буфер для разворота строки при выводе (itoa)
+
+@define VAR_ARR_PTR    0x4000   ; Текущий указатель записи/чтения массива
+@define VAR_N          0x4004   ; Общее количество чисел в массиве
+@define VAR_I          0x4008   ; Счетчик внешнего цикла сортировки
+@define VAR_J          0x400C   ; Счетчик внутреннего цикла сортировки
+@define VAR_ADDR_J     0x4010   ; Вычисленный адрес элемента arr[j]
+@define VAR_VAL_J      0x4014   ; Значение элемента arr[j]
+@define VAR_VAL_J1     0x4018   ; Значение элемента arr[j+1]
+@define VAR_K          0x401C   ; Счетчик цикла вывода
+@define VAR_BUF_PTR    0x4020   ; Указатель буфера itoa
+@define VAR_TMP_ITOA   0x4024   ; Временная ячейка для деления в itoa
+
+; --- Новая переменная для поддержки знака ---
+@define VAR_IS_NEG     0x4028   ; Флаг: 1 - число отрицательное, 0 - положительное
 
     .text
 
 _main:
-    (a, b : a + b)
-    ( _ : ) => OUT[1]
-    ( : ) => HALT
+    ( : $ARR_START )
+    ( : $VAR_ARR_PTR )
+    ( val, addr : ) => MEM_DATA
+
+    ; Инициализируем флаг знака нулем
+    ( : 0 )
+    ( : $VAR_IS_NEG )
+    ( val, addr : ) => MEM_DATA
+
+    ; Стартовое значение аккумулируемого числа
+    ( : 0 )
+
+_parse_loop:
+    ; На вершине стека - текущее собираемое число [num]
+    ( : $STDIN )
+    ( port : char ) <= IN
+    
+    ( char : char, char )
+    ( : 0 )
+    ( char, endl : char == endl )
+    <? _parse_final_save >
+    
+    ( char : char, char )
+    ( : 32 )
+    ( char, space : char == space )
+    <? _parse_save_num >
+
+    ; Проверка на символ минуса '-' (ASCII 45)
+    ( char : char, char )
+    ( : 45 )
+    ( char, minus : char == minus )
+    <? _parse_handle_minus >
+    
+    ( : 48 )  ; digit = char - 48
+    ( char, zero : char - zero )
+    
+    ; num = num * 10 + digit
+    ( num, digit : digit, num )
+    ( : 10 )
+    ( num, ten : num * ten )
+    ( digit, num10 : digit + num10 )
+    < _parse_loop >
+
+_parse_handle_minus:
+    ( minus_char : )                ; Удаляем символ '-' со стека. Стак: [num]
+    ( : 1 )                         ; Взводим флаг отрицательного числа
+    ( : $VAR_IS_NEG )
+    ( val, addr : ) => MEM_DATA
+    < _parse_loop >
+
+_parse_save_num:
+    ( space : )                     ; Стак: [num]
+    
+    ; Проверяем флаг знака
+    ( : $VAR_IS_NEG )
+    ( addr : is_neg ) <= MEM_DATA
+    <? _parse_negate_num >
+
+_parse_store_now:
+    ; Сохраняем число по адресу из VAR_ARR_PTR
+    ( : $VAR_ARR_PTR )
+    ( addr : ptr ) <= MEM_DATA      ; Стак: [num, ptr_val]
+    ( num, ptr : ptr, num )         ; Стак: [ptr_val, num]
+    ( val, addr : ) => MEM_DATA     ; Число сохранено, стак пуст.
+    
+    ; Сбрасываем флаг знака для следующего числа
+    ( : 0 )
+    ( : $VAR_IS_NEG )
+    ( val, addr : ) => MEM_DATA
+
+    ; VAR_ARR_PTR++
+    ( : $VAR_ARR_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( : $VAR_ARR_PTR )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : 0 )                         ; Возвращаем 0 на стек для сборки следующего числа
+    < _parse_loop >
+
+_parse_negate_num:
+    ( : 0 )
+    ( num, zero : zero - num )      ; Превращаем num в -num
+    < _parse_store_now >
+
+_parse_final_save:
+    ( endl : )                      ; Стак: [num]
+    
+    ; Проверяем знак для последнего числа
+    ( : $VAR_IS_NEG )
+    ( addr : is_neg ) <= MEM_DATA
+    <? _parse_final_negate >
+
+_parse_final_store_now:
+    ( : $VAR_ARR_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( num, ptr : ptr, num )
+    ( val, addr : ) => MEM_DATA
+    
+    ; N = (VAR_ARR_PTR + 1) - ARR_START
+    ( : $VAR_ARR_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( : $ARR_START )
+    ( last, base : last - base )
+
+    ( : $VAR_N )
+    ( val, addr : ) => MEM_DATA
+    < _bubble_sort_start >
+
+_parse_final_negate:
+    ( : 0 )
+    ( num, zero : zero - num )
+    < _parse_final_store_now >
+
+
+_bubble_sort_start:
+    ; ### Bubble Sort
+    ; if N < 2
+    ( : $VAR_N )
+    ( addr : n ) <= MEM_DATA
+    ( : 2 )
+    ( n, two : n < two )
+    <? _print_arr_prep >
+
+    ; i = 0
+    ( : 0 )
+    ( : $VAR_I )
+    ( val, addr : ) => MEM_DATA
+
+_outer_loop:
+    ; i < N - 1?
+    ( : $VAR_I )
+    ( addr : i ) <= MEM_DATA
+    ( : $VAR_N )
+    ( addr : n ) <= MEM_DATA
+    ( : 1 )
+    ( n, one : n - one )
+    ( i, lim : i < lim )
+    <? _inner_loop_init >
+    < _print_arr_prep >
+
+_inner_loop_init:
+    ( : 0 )
+    ( : $VAR_J )
+    ( val, addr : ) => MEM_DATA
+
+_inner_loop:
+    ; j < N - i - 1
+    ( : $VAR_J )
+    ( addr : j ) <= MEM_DATA
+    ( : $VAR_N )
+    ( addr : n ) <= MEM_DATA
+    ( : $VAR_I )
+    ( addr : i ) <= MEM_DATA
+    ( n, i : n - i )
+    ( : 1 )
+    ( ni, one : ni - one )
+    ( j, lim : j < lim )
+    <? _bubble_check >
+    
+    ; Конец внутреннего цикла -> i++
+    ( : $VAR_I )
+    ( addr : i ) <= MEM_DATA
+    ( : 1 )
+    ( i, one : i + one )
+    ( : $VAR_I )
+    ( val, addr : ) => MEM_DATA
+    < _outer_loop >
+
+_bubble_check:
+    ; Загружаем arr[j] и arr[j+1]
+    ( : $VAR_J )
+    ( addr : j ) <= MEM_DATA
+    ( : $ARR_START )
+    ( j, base : base + j )
+    
+    ( addr : addr, addr )
+    ( addr : val_j ) <= MEM_DATA
+    ( addr, val : val, addr )
+    
+    ( addr : addr, addr )
+    ( : 1 )
+    ( addr, one : addr + one )
+    ( addr : val_j1 ) <= MEM_DATA
+    
+    ( : $VAR_ADDR_J )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : $VAR_VAL_J1 )
+    ( val, addr : ) => MEM_DATA
+    ( : $VAR_VAL_J )
+    ( val, addr : ) => MEM_DATA
+    
+    ; arr[j] > arr[j+1]? (Знаковое сравнение)
+    ( : $VAR_VAL_J )
+    ( addr : val_j ) <= MEM_DATA
+    ( : $VAR_VAL_J1 )
+    ( addr : val_j1 ) <= MEM_DATA
+    ( v1, v2 : v1 > v2 )
+    <? _bubble_swap >
+
+_bubble_next_iter:
+    ; j++
+    ( : $VAR_J )
+    ( addr : j ) <= MEM_DATA
+    ( : 1 )
+    ( j, one : j + one )
+    ( : $VAR_J )
+    ( val, addr : ) => MEM_DATA
+    < _inner_loop >
+
+_bubble_swap:
+    ( : $VAR_VAL_J1 )
+    ( addr : val ) <= MEM_DATA
+    ( : $VAR_ADDR_J )
+    ( addr : addr_j ) <= MEM_DATA
+    ( val, addr : ) => MEM_DATA
+
+    ( : $VAR_ADDR_J )
+    ( addr : addr_j ) <= MEM_DATA
+    ( : 1 )
+    ( addr, one : addr + one )
+    ( : $VAR_VAL_J )
+    ( addr : val_j ) <= MEM_DATA
+    ( addr, val : val, addr )
+    ( val, addr : ) => MEM_DATA
+    < _bubble_next_iter >
+
+
+_print_arr_prep:
+    ; k = 0
+    ( : 0 )
+    ( : $VAR_K )
+    ( val, addr : ) => MEM_DATA
+
+_print_arr_loop:
+    ( : $VAR_K )
+    ( addr : k ) <= MEM_DATA
+    ( : $VAR_N )
+    ( addr : n ) <= MEM_DATA
+    ( k, n : k < n )
+    <? _print_number_proc >
+    < _exit >
+
+_print_number_proc:
+    ( : $VAR_K )
+    ( addr : k ) <= MEM_DATA
+    ( : $ARR_START )
+    ( k, base : base + k )
+    ( addr : val ) <= MEM_DATA      ; Стак: [val]
+    
+    ; --- Проверка знака числа перед itoa ---
+    ( val : val, val )
+    ( : 0 )
+    ( val, zero : val < zero )
+    <? _print_minus_sign >
+
+_itoa_prep:
+    ; На стеке гарантированно положительное число [val]
+    ( : $TMP_VAR )
+    ( : $VAR_BUF_PTR )
+    ( val, addr : ) => MEM_DATA
+
+_itoa_loop:
+    ( v : v, v )
+    ( : 10 )
+    ( v, ten : v / ten )
+    
+    ( : $VAR_TMP_ITOA )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : $VAR_TMP_ITOA )
+    ( addr : nv ) <= MEM_DATA
+    ( : 10 )
+    ( nv, ten : nv * ten )
+    ( v, nv10 : v - nv10 )
+    
+    ( : 48 )
+    ( digit, zero : digit + zero )
+    
+    ( : $VAR_BUF_PTR )
+    ( addr : buf_ptr ) <= MEM_DATA
+    ( val, addr : ) => MEM_DATA
+    
+    ( : $VAR_BUF_PTR )
+    ( : $VAR_BUF_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( addr, val : val, addr )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : $VAR_TMP_ITOA )
+    ( addr : nv ) <= MEM_DATA
+    ( nv : nv, nv )
+    ( : 0 )
+    ( nv, zero : nv == zero )
+    <? _itoa_done >
+    < _itoa_loop >
+
+_itoa_done:
+    ( nv : )
+
+_print_digits_loop:
+    ( : $VAR_BUF_PTR )
+    ( : $VAR_BUF_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr - one )
+    ( addr, val : val, addr )
+    ( val, addr : ) => MEM_DATA
+    
+    ( : $VAR_BUF_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( addr : char ) <= MEM_DATA
+    ( : $STDOUT )
+    ( char, port : ) => OUT
+    
+    ( : $VAR_BUF_PTR )
+    ( addr : ptr ) <= MEM_DATA
+    ( : $TMP_VAR )
+    ( ptr, base : ptr == base )
+    <? _print_space_between >
+    < _print_digits_loop >
+
+_print_minus_sign:
+    ; Печатаем '-' (ASCII 45) в порт STDOUT
+    ( : 45 )
+    ( : $STDOUT )
+    ( char, port : ) => OUT
+    
+    ; Делаем число положительным для itoa_loop: val = 0 - val
+    ( : 0 )
+    ( val, zero : zero - val )      ; Стак: [positive_val]
+    < _itoa_prep >
+
+_print_space_between:
+    ( : 32 )
+    ( : $STDOUT )
+    ( space, port : ) => OUT
+    
+    ; k++
+    ( : $VAR_K )
+    ( addr : k ) <= MEM_DATA
+    ( : 1 )
+    ( k, one : k + one )
+    ( : $VAR_K )
+    ( val, addr : ) => MEM_DATA
+    < _print_arr_loop >
+
+_exit:
+    ( : 0 )
+    ( : $STDOUT )
+    ( nl, port : ) => OUT
+    <...>
