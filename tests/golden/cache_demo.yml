@@ -1,0 +1,308 @@
+in_source: |-
+  ; Считаем в цикле до нуля (чтобы проверить кеш инструкций)
+
+      .text
+
+  _main:
+    ( : 10 )
+
+  _loop:
+    ( n : n, n )
+    ( : 0 )
+    ( n, zero : n == zero )
+    <? _exit>
+
+    ( : 1 )
+    ( n, one : n - one )
+    <_loop>
+
+  _exit:
+    ( n : )
+    <...>
+port_mapped_io:
+  0: []
+  1: []
+  2: []
+  3: []
+data_memory_size: 32
+text_memory_size: 64
+limit: 500
+slice: ["head", "250"]
+view: |-
+  PC: {pc:hex} mPC: {mpc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:dec} Td: {td:dec}
+out_data: !!binary |
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+out_data_hex: |-
+  0...31 - 0x00 - .
+out_text: !!binary |
+  FAUAAAAcCgAAAB4cAAAAAA8VIQAAABwBAAAABRQKAAAAHQE=
+out_text_hex: |-
+  0x00000000 - 0x1405000000 - jump 5
+  0x00000005 - 0x1c0a000000 - push 10
+  0x0000000a - 0x1e - duplicate
+  0x0000000b - 0x1c00000000 - push 0
+  0x00000010 - 0x0f - is_==
+  0x00000011 - 0x1521000000 - jump_if 33
+  0x00000016 - 0x1c01000000 - push 1
+  0x0000001b - 0x05 - substract
+  0x0000001c - 0x140a000000 - jump 10
+  0x00000021 - 0x1d - pop
+  0x00000022 - 0x01 - halt
+out_stdout: |
+  outputbuffer[0]: []
+  outputbuffer[1]: []
+  outputbuffer[2]: []
+  outputbuffer[3]: []
+  
+  ticks: 446
+out_log: |
+  0 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  1 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  2 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  3 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  4 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  5 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  6 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  7 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  8 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  9 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  10 [ ] | PC: 00000000 mPC: 01 IPF: 00000514 IR: no_op S: 0 Td: 0
+  11 [ ] | PC: 00000001 mPC: 02 IPF: 00000005 IR: jump  S: 0 Td: 0
+  12 [ ] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  13 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  14 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  15 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  16 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  17 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  18 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  19 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  20 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  21 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  22 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  23 [ ] | PC: 00000001 mPC: 06 IPF: 00000005 IR: jump  S: 0 Td: 0
+  24 [ ] | PC: 00000005 mPC: 00 IPF: 00000005 IR: jump  S: 0 Td: 0
+  25 [ ] | PC: 00000005 mPC: 01 IPF: 00000a1c IR: jump  S: 0 Td: 0
+  26 [ ] | PC: 00000006 mPC: 02 IPF: 0000000a IR: push  S: 0 Td: 0
+  27 [ ] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  28 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  29 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  30 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  31 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  32 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  33 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  34 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  35 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  36 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  37 [S] | PC: 00000006 mPC: 0e IPF: 0000000a IR: push  S: 0 Td: 0
+  38 [ ] | PC: 00000006 mPC: 0f IPF: 0000000a IR: push  S: 0 Td: 0
+  39 [ ] | PC: 0000000a mPC: 00 IPF: 0000000a IR: push  S: 0 Td: 10
+  40 [ ] | PC: 0000000a mPC: 01 IPF: 00001c1e IR: push  S: 0 Td: 10
+  41 [ ] | PC: 0000000b mPC: 02 IPF: 0000001c IR: dupli S: 0 Td: 10
+  42 [ ] | PC: 0000000b mPC: 10 IPF: 0000001c IR: dupli S: 0 Td: 10
+  43 [ ] | PC: 0000000b mPC: 00 IPF: 0000001c IR: dupli S: 10 Td: 10
+  44 [ ] | PC: 0000000b mPC: 01 IPF: 0000001c IR: dupli S: 10 Td: 10
+  45 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: push  S: 10 Td: 10
+  46 [ ] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  47 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  48 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  49 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  50 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  51 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  52 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  53 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  54 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  55 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  56 [S] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 10 Td: 10
+  57 [ ] | PC: 0000000c mPC: 0f IPF: 00000000 IR: push  S: 10 Td: 10
+  58 [ ] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  59 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  60 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  61 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  62 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  63 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  64 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  65 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  66 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  67 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  68 [S] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 10 Td: 0
+  69 [ ] | PC: 00000010 mPC: 01 IPF: 0021150f IR: push  S: 10 Td: 0
+  70 [ ] | PC: 00000011 mPC: 02 IPF: 00002115 IR: is_== S: 10 Td: 0
+  71 [ ] | PC: 00000011 mPC: 19 IPF: 00002115 IR: is_== S: 10 Td: 0
+  72 [ ] | PC: 00000011 mPC: 00 IPF: 00002115 IR: is_== S: 10 Td: 0
+  73 [ ] | PC: 00000011 mPC: 01 IPF: 00002115 IR: is_== S: 10 Td: 0
+  74 [ ] | PC: 00000012 mPC: 02 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  75 [ ] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  76 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  77 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  78 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  79 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  80 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  81 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  82 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  83 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  84 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  85 [S] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 10 Td: 0
+  86 [ ] | PC: 00000012 mPC: 0a IPF: 00000021 IR: jump_ S: 10 Td: 0
+  87 [ ] | PC: 00000016 mPC: 00 IPF: 00000021 IR: jump_ S: 0 Td: 10
+  88 [ ] | PC: 00000016 mPC: 01 IPF: 0000011c IR: jump_ S: 0 Td: 10
+  89 [ ] | PC: 00000017 mPC: 02 IPF: 00000001 IR: push  S: 0 Td: 10
+  90 [ ] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  91 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  92 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  93 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  94 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  95 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  96 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  97 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  98 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  99 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  100 [S] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 10
+  101 [ ] | PC: 00000017 mPC: 0f IPF: 00000001 IR: push  S: 0 Td: 10
+  102 [ ] | PC: 0000001b mPC: 00 IPF: 00000001 IR: push  S: 10 Td: 1
+  103 [ ] | PC: 0000001b mPC: 01 IPF: 00000005 IR: push  S: 10 Td: 1
+  104 [ ] | PC: 0000001c mPC: 02 IPF: 00000000 IR: subst S: 10 Td: 1
+  105 [ ] | PC: 0000001c mPC: 13 IPF: 00000000 IR: subst S: 10 Td: 1
+  106 [ ] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  107 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  108 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  109 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  110 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  111 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  112 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  113 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  114 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  115 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  116 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 9
+  117 [ ] | PC: 0000001c mPC: 01 IPF: 00000a14 IR: subst S: 0 Td: 9
+  118 [ ] | PC: 0000001d mPC: 02 IPF: 0000000a IR: jump  S: 0 Td: 9
+  119 [ ] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  120 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  121 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  122 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  123 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  124 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  125 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  126 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  127 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  128 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  129 [S] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 9
+  130 [ ] | PC: 0000001d mPC: 06 IPF: 0000000a IR: jump  S: 0 Td: 9
+  131 [ ] | PC: 0000000a mPC: 00 IPF: 0000000a IR: jump  S: 0 Td: 9
+  132 [ ] | PC: 0000000a mPC: 01 IPF: 00001c1e IR: jump  S: 0 Td: 9
+  133 [ ] | PC: 0000000b mPC: 02 IPF: 0000001c IR: dupli S: 0 Td: 9
+  134 [ ] | PC: 0000000b mPC: 10 IPF: 0000001c IR: dupli S: 0 Td: 9
+  135 [ ] | PC: 0000000b mPC: 00 IPF: 0000001c IR: dupli S: 9 Td: 9
+  136 [ ] | PC: 0000000b mPC: 01 IPF: 0000001c IR: dupli S: 9 Td: 9
+  137 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: push  S: 9 Td: 9
+  138 [ ] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 9 Td: 9
+  139 [ ] | PC: 0000000c mPC: 0f IPF: 00000000 IR: push  S: 9 Td: 9
+  140 [ ] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 9 Td: 0
+  141 [ ] | PC: 00000010 mPC: 01 IPF: 0021150f IR: push  S: 9 Td: 0
+  142 [ ] | PC: 00000011 mPC: 02 IPF: 00002115 IR: is_== S: 9 Td: 0
+  143 [ ] | PC: 00000011 mPC: 19 IPF: 00002115 IR: is_== S: 9 Td: 0
+  144 [ ] | PC: 00000011 mPC: 00 IPF: 00002115 IR: is_== S: 9 Td: 0
+  145 [ ] | PC: 00000011 mPC: 01 IPF: 00002115 IR: is_== S: 9 Td: 0
+  146 [ ] | PC: 00000012 mPC: 02 IPF: 00000021 IR: jump_ S: 9 Td: 0
+  147 [ ] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 9 Td: 0
+  148 [ ] | PC: 00000012 mPC: 0a IPF: 00000021 IR: jump_ S: 9 Td: 0
+  149 [ ] | PC: 00000016 mPC: 00 IPF: 00000021 IR: jump_ S: 0 Td: 9
+  150 [ ] | PC: 00000016 mPC: 01 IPF: 0000011c IR: jump_ S: 0 Td: 9
+  151 [ ] | PC: 00000017 mPC: 02 IPF: 00000001 IR: push  S: 0 Td: 9
+  152 [ ] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 9
+  153 [ ] | PC: 00000017 mPC: 0f IPF: 00000001 IR: push  S: 0 Td: 9
+  154 [ ] | PC: 0000001b mPC: 00 IPF: 00000001 IR: push  S: 9 Td: 1
+  155 [ ] | PC: 0000001b mPC: 01 IPF: 00000005 IR: push  S: 9 Td: 1
+  156 [ ] | PC: 0000001c mPC: 02 IPF: 00000000 IR: subst S: 9 Td: 1
+  157 [ ] | PC: 0000001c mPC: 13 IPF: 00000000 IR: subst S: 9 Td: 1
+  158 [ ] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 8
+  159 [ ] | PC: 0000001c mPC: 01 IPF: 00000a14 IR: subst S: 0 Td: 8
+  160 [ ] | PC: 0000001d mPC: 02 IPF: 0000000a IR: jump  S: 0 Td: 8
+  161 [ ] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 8
+  162 [ ] | PC: 0000001d mPC: 06 IPF: 0000000a IR: jump  S: 0 Td: 8
+  163 [ ] | PC: 0000000a mPC: 00 IPF: 0000000a IR: jump  S: 0 Td: 8
+  164 [ ] | PC: 0000000a mPC: 01 IPF: 00001c1e IR: jump  S: 0 Td: 8
+  165 [ ] | PC: 0000000b mPC: 02 IPF: 0000001c IR: dupli S: 0 Td: 8
+  166 [ ] | PC: 0000000b mPC: 10 IPF: 0000001c IR: dupli S: 0 Td: 8
+  167 [ ] | PC: 0000000b mPC: 00 IPF: 0000001c IR: dupli S: 8 Td: 8
+  168 [ ] | PC: 0000000b mPC: 01 IPF: 0000001c IR: dupli S: 8 Td: 8
+  169 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: push  S: 8 Td: 8
+  170 [ ] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 8 Td: 8
+  171 [ ] | PC: 0000000c mPC: 0f IPF: 00000000 IR: push  S: 8 Td: 8
+  172 [ ] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 8 Td: 0
+  173 [ ] | PC: 00000010 mPC: 01 IPF: 0021150f IR: push  S: 8 Td: 0
+  174 [ ] | PC: 00000011 mPC: 02 IPF: 00002115 IR: is_== S: 8 Td: 0
+  175 [ ] | PC: 00000011 mPC: 19 IPF: 00002115 IR: is_== S: 8 Td: 0
+  176 [ ] | PC: 00000011 mPC: 00 IPF: 00002115 IR: is_== S: 8 Td: 0
+  177 [ ] | PC: 00000011 mPC: 01 IPF: 00002115 IR: is_== S: 8 Td: 0
+  178 [ ] | PC: 00000012 mPC: 02 IPF: 00000021 IR: jump_ S: 8 Td: 0
+  179 [ ] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 8 Td: 0
+  180 [ ] | PC: 00000012 mPC: 0a IPF: 00000021 IR: jump_ S: 8 Td: 0
+  181 [ ] | PC: 00000016 mPC: 00 IPF: 00000021 IR: jump_ S: 0 Td: 8
+  182 [ ] | PC: 00000016 mPC: 01 IPF: 0000011c IR: jump_ S: 0 Td: 8
+  183 [ ] | PC: 00000017 mPC: 02 IPF: 00000001 IR: push  S: 0 Td: 8
+  184 [ ] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 8
+  185 [ ] | PC: 00000017 mPC: 0f IPF: 00000001 IR: push  S: 0 Td: 8
+  186 [ ] | PC: 0000001b mPC: 00 IPF: 00000001 IR: push  S: 8 Td: 1
+  187 [ ] | PC: 0000001b mPC: 01 IPF: 00000005 IR: push  S: 8 Td: 1
+  188 [ ] | PC: 0000001c mPC: 02 IPF: 00000000 IR: subst S: 8 Td: 1
+  189 [ ] | PC: 0000001c mPC: 13 IPF: 00000000 IR: subst S: 8 Td: 1
+  190 [ ] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 7
+  191 [ ] | PC: 0000001c mPC: 01 IPF: 00000a14 IR: subst S: 0 Td: 7
+  192 [ ] | PC: 0000001d mPC: 02 IPF: 0000000a IR: jump  S: 0 Td: 7
+  193 [ ] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 7
+  194 [ ] | PC: 0000001d mPC: 06 IPF: 0000000a IR: jump  S: 0 Td: 7
+  195 [ ] | PC: 0000000a mPC: 00 IPF: 0000000a IR: jump  S: 0 Td: 7
+  196 [ ] | PC: 0000000a mPC: 01 IPF: 00001c1e IR: jump  S: 0 Td: 7
+  197 [ ] | PC: 0000000b mPC: 02 IPF: 0000001c IR: dupli S: 0 Td: 7
+  198 [ ] | PC: 0000000b mPC: 10 IPF: 0000001c IR: dupli S: 0 Td: 7
+  199 [ ] | PC: 0000000b mPC: 00 IPF: 0000001c IR: dupli S: 7 Td: 7
+  200 [ ] | PC: 0000000b mPC: 01 IPF: 0000001c IR: dupli S: 7 Td: 7
+  201 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: push  S: 7 Td: 7
+  202 [ ] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 7 Td: 7
+  203 [ ] | PC: 0000000c mPC: 0f IPF: 00000000 IR: push  S: 7 Td: 7
+  204 [ ] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 7 Td: 0
+  205 [ ] | PC: 00000010 mPC: 01 IPF: 0021150f IR: push  S: 7 Td: 0
+  206 [ ] | PC: 00000011 mPC: 02 IPF: 00002115 IR: is_== S: 7 Td: 0
+  207 [ ] | PC: 00000011 mPC: 19 IPF: 00002115 IR: is_== S: 7 Td: 0
+  208 [ ] | PC: 00000011 mPC: 00 IPF: 00002115 IR: is_== S: 7 Td: 0
+  209 [ ] | PC: 00000011 mPC: 01 IPF: 00002115 IR: is_== S: 7 Td: 0
+  210 [ ] | PC: 00000012 mPC: 02 IPF: 00000021 IR: jump_ S: 7 Td: 0
+  211 [ ] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 7 Td: 0
+  212 [ ] | PC: 00000012 mPC: 0a IPF: 00000021 IR: jump_ S: 7 Td: 0
+  213 [ ] | PC: 00000016 mPC: 00 IPF: 00000021 IR: jump_ S: 0 Td: 7
+  214 [ ] | PC: 00000016 mPC: 01 IPF: 0000011c IR: jump_ S: 0 Td: 7
+  215 [ ] | PC: 00000017 mPC: 02 IPF: 00000001 IR: push  S: 0 Td: 7
+  216 [ ] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 7
+  217 [ ] | PC: 00000017 mPC: 0f IPF: 00000001 IR: push  S: 0 Td: 7
+  218 [ ] | PC: 0000001b mPC: 00 IPF: 00000001 IR: push  S: 7 Td: 1
+  219 [ ] | PC: 0000001b mPC: 01 IPF: 00000005 IR: push  S: 7 Td: 1
+  220 [ ] | PC: 0000001c mPC: 02 IPF: 00000000 IR: subst S: 7 Td: 1
+  221 [ ] | PC: 0000001c mPC: 13 IPF: 00000000 IR: subst S: 7 Td: 1
+  222 [ ] | PC: 0000001c mPC: 00 IPF: 00000000 IR: subst S: 0 Td: 6
+  223 [ ] | PC: 0000001c mPC: 01 IPF: 00000a14 IR: subst S: 0 Td: 6
+  224 [ ] | PC: 0000001d mPC: 02 IPF: 0000000a IR: jump  S: 0 Td: 6
+  225 [ ] | PC: 0000001d mPC: 05 IPF: 0000000a IR: jump  S: 0 Td: 6
+  226 [ ] | PC: 0000001d mPC: 06 IPF: 0000000a IR: jump  S: 0 Td: 6
+  227 [ ] | PC: 0000000a mPC: 00 IPF: 0000000a IR: jump  S: 0 Td: 6
+  228 [ ] | PC: 0000000a mPC: 01 IPF: 00001c1e IR: jump  S: 0 Td: 6
+  229 [ ] | PC: 0000000b mPC: 02 IPF: 0000001c IR: dupli S: 0 Td: 6
+  230 [ ] | PC: 0000000b mPC: 10 IPF: 0000001c IR: dupli S: 0 Td: 6
+  231 [ ] | PC: 0000000b mPC: 00 IPF: 0000001c IR: dupli S: 6 Td: 6
+  232 [ ] | PC: 0000000b mPC: 01 IPF: 0000001c IR: dupli S: 6 Td: 6
+  233 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: push  S: 6 Td: 6
+  234 [ ] | PC: 0000000c mPC: 0e IPF: 00000000 IR: push  S: 6 Td: 6
+  235 [ ] | PC: 0000000c mPC: 0f IPF: 00000000 IR: push  S: 6 Td: 6
+  236 [ ] | PC: 00000010 mPC: 00 IPF: 00000000 IR: push  S: 6 Td: 0
+  237 [ ] | PC: 00000010 mPC: 01 IPF: 0021150f IR: push  S: 6 Td: 0
+  238 [ ] | PC: 00000011 mPC: 02 IPF: 00002115 IR: is_== S: 6 Td: 0
+  239 [ ] | PC: 00000011 mPC: 19 IPF: 00002115 IR: is_== S: 6 Td: 0
+  240 [ ] | PC: 00000011 mPC: 00 IPF: 00002115 IR: is_== S: 6 Td: 0
+  241 [ ] | PC: 00000011 mPC: 01 IPF: 00002115 IR: is_== S: 6 Td: 0
+  242 [ ] | PC: 00000012 mPC: 02 IPF: 00000021 IR: jump_ S: 6 Td: 0
+  243 [ ] | PC: 00000012 mPC: 09 IPF: 00000021 IR: jump_ S: 6 Td: 0
+  244 [ ] | PC: 00000012 mPC: 0a IPF: 00000021 IR: jump_ S: 6 Td: 0
+  245 [ ] | PC: 00000016 mPC: 00 IPF: 00000021 IR: jump_ S: 0 Td: 6
+  246 [ ] | PC: 00000016 mPC: 01 IPF: 0000011c IR: jump_ S: 0 Td: 6
+  247 [ ] | PC: 00000017 mPC: 02 IPF: 00000001 IR: push  S: 0 Td: 6
+  248 [ ] | PC: 00000017 mPC: 0e IPF: 00000001 IR: push  S: 0 Td: 6
+  249 [ ] | PC: 00000017 mPC: 0f IPF: 00000001 IR: push  S: 0 Td: 6

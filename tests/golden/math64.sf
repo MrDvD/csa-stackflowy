@@ -1,0 +1,42 @@
+; Проверяем арифметику двойной точности
+
+    .data
+_A_high: 0xDF43E2E1
+_A_low:  0x023E5A1F
+_B_high: 0x5ED0C50F
+_B_low:  0x333469C0
+_R_high: 0  ; expected 0x3E14A7F0 in data memory
+_R_low:  0  ; -------- 0x3572C3DF --------------
+
+    .text
+_main:
+  ; сложение младших 32 бит
+  ( : _A_low )
+  ( addr : val ) <= MEM_DATA
+  ( : _B_low )
+  ( addr : val ) <= MEM_DATA
+  ( a, b : a + b )
+
+  ; сохранение младшего результата и флагов
+  ( : flags ) <= FLG
+  ( acc, flags : flags, acc )
+  ( : _R_low )
+  ( val, addr : ) => MEM_DATA
+
+  ; выделение бита Carry
+  ( : 1 )
+  ( flags, c_mask : flags & c_mask )
+
+  ; сложение старших 32 бит с переносом
+  ( : _A_high )
+  ( addr : val ) <= MEM_DATA
+  ( acc, high : high, acc )
+  ( a, b : a + b )
+  ( : _B_high )
+  ( addr : val ) <= MEM_DATA
+  ( a, b : a + b )
+
+  ; сохранение старшего результата
+  ( : _R_high )
+  ( val, addr : ) => MEM_DATA
+  <...>

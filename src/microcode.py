@@ -36,9 +36,7 @@ class MicroInstruction:
     latch_sr: bool = False
     select_sr: MuxSrSel = MuxSrSel.ALU_RESULT
     memory_d_output: bool = False
-    memory_i_output: bool = False
     memory_d_write: bool = False
-    cache_i_write: bool = False
     io_output: bool = False
     io_write: bool = False
     select_data_read: MuxDataReadSel = MuxDataReadSel.MEM_DATA
@@ -254,24 +252,39 @@ def generate_microprogram() -> Tuple[List[MicroInstruction], Dict[State, int]]:
     reg_state(Opcode.POP, idx)
 
     ### BINARY ALU OPERATIONS
-    def add_binary_op(opcode: Opcode, alu: AluOp) -> None:
-        idx = add_instruction(
-            MicroInstruction(
-                latch_td=True,
-                latch_s=True,
-                latch_d_stack=True,
-                select_s=MuxSSel.PREV,
-                alu_op=alu,
-                select_td=MuxTdSel.ALU_RESULT,
-                select_mpc=MuxMpcSel.START,
+    def add_binary_op(opcode: Opcode, alu: AluOp, flags: bool = False) -> None:
+        if flags:
+            idx = add_instruction(
+                MicroInstruction(
+                    latch_td=True,
+                    latch_s=True,
+                    latch_d_stack=True,
+                    latch_sr=True,
+                    select_sr=MuxSrSel.ALU_FLAGS,
+                    select_s=MuxSSel.PREV,
+                    alu_op=alu,
+                    select_td=MuxTdSel.ALU_RESULT,
+                    select_mpc=MuxMpcSel.START,
+                )
             )
-        )
+        else:
+            idx = add_instruction(
+                MicroInstruction(
+                    latch_td=True,
+                    latch_s=True,
+                    latch_d_stack=True,
+                    select_s=MuxSSel.PREV,
+                    alu_op=alu,
+                    select_td=MuxTdSel.ALU_RESULT,
+                    select_mpc=MuxMpcSel.START,
+                )
+            )
         reg_state(opcode, idx)
 
-    add_binary_op(Opcode.ADD, AluOp.ADD)
-    add_binary_op(Opcode.SUB, AluOp.SUB)
-    add_binary_op(Opcode.MUL, AluOp.MUL)
-    add_binary_op(Opcode.DIV, AluOp.DIV)
+    add_binary_op(Opcode.ADD, AluOp.ADD, flags=True)
+    add_binary_op(Opcode.SUB, AluOp.SUB, flags=True)
+    add_binary_op(Opcode.MUL, AluOp.MUL, flags=True)
+    add_binary_op(Opcode.DIV, AluOp.DIV, flags=True)
     add_binary_op(Opcode.AND, AluOp.AND)
     add_binary_op(Opcode.OR, AluOp.OR)
     add_binary_op(Opcode.XOR, AluOp.XOR)

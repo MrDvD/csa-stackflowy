@@ -5,6 +5,7 @@ from microcode import generate_microprogram
 from typing import List
 import logging
 import sys
+import argparse
 
 
 class Processor:
@@ -23,8 +24,8 @@ class Processor:
 
     def load_text(self, text_code: bytes) -> None:
         for idx, byte in enumerate(text_code):
-            if idx < len(self.control_unit.rom_instructions):
-                self.control_unit.rom_instructions[idx] = byte
+            if idx < len(self.control_unit.text_memory.memory):
+                self.control_unit.text_memory.memory[idx] = byte
 
     def load_data(self, data_code: bytes) -> None:
         for idx in range(0, len(data_code), 4):
@@ -44,7 +45,7 @@ class Processor:
                     f"{model_tick} [{'S' if stalled else ' '}] | {self.control_unit}"
                 )
                 model_tick += 1
-                if model_tick == 726:
+                if model_tick == 94:
                     continue
         except Exception as e:
             raise e
@@ -99,13 +100,15 @@ logging.root.handle = _custom_handle
 
 def main(
     target_prefix: str,
-    input_file_1: str,
-    input_file_2: str,
-    input_file_3: str,
-    input_file_4: str,
+    input_file_1: str | None,
+    input_file_2: str | None,
+    input_file_3: str | None,
+    input_file_4: str | None,
     data_mem_size: int,
+    text_mem_size: int,
     limit: int,
     view_template: str,
+    slice_cfg: str = "all",
 ) -> None:
     with open(target_prefix + "_code.bin", "rb") as file:
         text_code: bytes = file.read()
@@ -115,14 +118,20 @@ def main(
 
     input_data: List[List[int]] = list()
     for file in [input_file_1, input_file_2, input_file_3, input_file_4]:
-        with open(file, encoding="ascii") as file:
-            text: str = file.read()
-            data: list[int] = [ord(char) for char in text]
-            input_data.append(data)
+        if file is not None:
+            with open(file, encoding="ascii") as file:
+                text: str = file.read()
+                data: list[int] = [ord(char) for char in text]
+                input_data.append(data)
+
+    if "," in slice_cfg:
+        SlicingLogger.slice_cfg = slice_cfg.split(",")
+    else:
+        SlicingLogger.slice_cfg = slice_cfg
 
     processor: Processor = Processor(
         data_memory_size=int(data_mem_size),
-        text_memory_size=len(text_code),
+        text_memory_size=int(text_mem_size),
         input_data=input_data,
         view_template=view_template,
     )
@@ -146,22 +155,40 @@ def main(
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    if len(sys.argv) != 9:
-        print(
-            "Wrong arguments: machine.py <target_prefix> <input_file_1> ... <input_file_4> <data_mem_size> <limit> <view_template>"
-        )
-        sys.exit(1)
-    (
-        _,
-        target_prefix,
-        input_file_1,
-        input_file_2,
-        input_file_3,
-        input_file_4,
-        data_mem_size,
-        limit,
-        view_template,
-    ) = sys.argv
+
+    parser = argparse.ArgumentParser(description="Simulation machine for StackFlowy")
+    parser.add_argument(
+        "-t", "--target", required=True, help="Prefix for the target files"
+    )
+    parser.add_argument("--input1", help="Path to input file 1")
+    parser.add_argument("--input2", help="Path to input file 2")
+    parser.add_argument("--input3", help="Path to input file 3")
+    parser.add_argument("--input4", help="Path to input file 4")
+    parser.add_argument("--data-mem-size", required=True, help="Data memory size")
+    parser.add_argument("--text-mem-size", required=True, help="Text memory size")
+    parser.add_argument("--limit", required=True, help="Instruction limit")
+    parser.add_argument(
+        "--view-template", required=True, help="View template for logging"
+    )
+    parser.add_argument(
+        "--slice",
+        default="all",
+        help="Log slicing configuration (all, last, head,n, tail,n)",
+    )
+
+    args = parser.parse_args()
+
+    target_prefix = args.target
+    input_file_1 = args.input1
+    input_file_2 = args.input2
+    input_file_3 = args.input3
+    input_file_4 = args.input4
+    data_mem_size = args.data_mem_size
+    text_mem_size = args.text_mem_size
+    limit = args.limit
+    view_template = args.view_template
+    slice_cfg = args.slice
+
     if not data_mem_size.isdecimal():
         print("Wrong arguments: <data_mem_size> is not a decimal number")
         sys.exit(1)
@@ -175,6 +202,8 @@ if __name__ == "__main__":
         input_file_3,
         input_file_4,
         int(data_mem_size),
+        int(text_mem_size),
         int(limit),
         view_template,
+        slice_cfg,
     )
