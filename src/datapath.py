@@ -47,13 +47,15 @@ class IODevice:
 
 
 class Memory:
-    def __init__(self, mem_size: int, delay: int) -> None:
+    def __init__(self, mem_size: int, delay: int, readonly: bool = False) -> None:
         self.busy: bool = False
         self.countdown: int = 0
-        assert mem_size % 4 == 0, "Memory size must be a multiple of 4"
+        assert (mem_size & (mem_size - 1)) == 0, "Memory size must be a power of 2"
+        assert mem_size >= 4, "Memory must be able to contain a machine word"
         self.memory: List[int] = [0] * mem_size
-        self.delay = delay
-        assert delay > 0, "Memory delay should be positive"
+        assert delay > 0, "Memory delay must be positive"
+        self.delay = delay - 1
+        self.readonly = readonly
 
     @property
     def ready(self) -> int:
@@ -62,6 +64,7 @@ class Memory:
         return 0
 
     def write(self, addr: int, data_in: int):
+        assert not self.readonly, "Memory is readonly, writing is forbidden"
         self.busy = False
         addr = addr % len(self.memory)
         four_bytes = data_in.to_bytes(4, byteorder="little")

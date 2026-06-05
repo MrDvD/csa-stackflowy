@@ -23,8 +23,8 @@ class Processor:
 
     def load_text(self, text_code: bytes) -> None:
         for idx, byte in enumerate(text_code):
-            if idx < len(self.control_unit.rom_instructions):
-                self.control_unit.rom_instructions[idx] = byte
+            if idx < len(self.control_unit.text_memory.memory):
+                self.control_unit.text_memory.memory[idx] = byte
 
     def load_data(self, data_code: bytes) -> None:
         for idx in range(0, len(data_code), 4):
@@ -44,7 +44,7 @@ class Processor:
                     f"{model_tick} [{'S' if stalled else ' '}] | {self.control_unit}"
                 )
                 model_tick += 1
-                if model_tick == 726:
+                if model_tick == 94:
                     continue
         except Exception as e:
             raise e
@@ -104,6 +104,7 @@ def main(
     input_file_3: str,
     input_file_4: str,
     data_mem_size: int,
+    text_mem_size: int,
     limit: int,
     view_template: str,
 ) -> None:
@@ -122,7 +123,7 @@ def main(
 
     processor: Processor = Processor(
         data_memory_size=int(data_mem_size),
-        text_memory_size=len(text_code),
+        text_memory_size=int(text_mem_size),
         input_data=input_data,
         view_template=view_template,
     )
@@ -146,9 +147,9 @@ def main(
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    if len(sys.argv) != 9:
+    if len(sys.argv) != 10:
         print(
-            "Wrong arguments: machine.py <target_prefix> <input_file_1> ... <input_file_4> <data_mem_size> <limit> <view_template>"
+            "Wrong arguments: machine.py <target_prefix> <input_file_1> ... <input_file_4> <data_mem_size> <text_mem_size> <limit> <view_template>"
         )
         sys.exit(1)
     (
@@ -159,6 +160,7 @@ if __name__ == "__main__":
         input_file_3,
         input_file_4,
         data_mem_size,
+        text_mem_size,
         limit,
         view_template,
     ) = sys.argv
@@ -175,6 +177,7 @@ if __name__ == "__main__":
         input_file_3,
         input_file_4,
         int(data_mem_size),
+        int(text_mem_size),
         int(limit),
         view_template,
     )

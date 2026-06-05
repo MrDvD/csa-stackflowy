@@ -1,5 +1,5 @@
 from isa import Opcode
-from datapath import DataPath
+from datapath import DataPath, Memory
 from typing import List, Dict
 from dataclasses import dataclass
 from microcode import MicroInstruction, State
@@ -29,7 +29,7 @@ class ControlUnit:
         data_path: DataPath,
         view_template: str,
     ):
-        self.rom_instructions: List[int] = [0] * mem_size
+        self.text_memory: Memory = Memory(mem_size, 10)
         self.i_cache: List[CacheLine] = [CacheLine() for _ in range(16)]
         self.mprogram: List[MicroInstruction] = mprogram
         self.state_decoder_map: Dict[State, int] = state_decoder_map
@@ -45,16 +45,7 @@ class ControlUnit:
         self.mpc: int = 0
         self.mr: MicroInstruction = MicroInstruction()
 
-        self.rom_countdown: int = 0
-        self.rom_busy: bool = False
-
         self.view_template: str = view_template
-
-    def _read_i_memory(self, addr: int) -> int:
-        base_pc = addr & ~3
-        idx = base_pc % len(self.rom_instructions)
-        four_bytes = self.rom_instructions[idx : idx + 4]
-        return int.from_bytes(four_bytes, byteorder="little")
 
     def _get_prefetch_value(self) -> int:
         return int.from_bytes(self.i_prefetch, byteorder="little")
@@ -138,19 +129,16 @@ class ControlUnit:
         return self.mprogram[mpc % len(self.mprogram)]
 
     def cache_write(self) -> None:
-        self.rom_busy = False
         offset = self.pc & 0x3
         match self.mr.select_i_prefetch:
-            case MuxIPrefetch.CACHE:
-                pc = self.pc
             case MuxIPrefetch.CACHE_ARG:
                 if offset == 0:
                     pc = self.pc
                 else:
                     pc = self.pc + 4
-            case _:
-                raise Exception("Incorrect state: cache is not requested")
-        word = self._read_i_memory(pc)
+            case MuxIPrefetch.CACHE | _:
+                pc = self.pc
+        word = self.text_memory.read(pc & ~3)
         index = (pc >> 2) & 0xF
         tag = pc >> 6
         self.i_cache[index] = CacheLine(True, tag, word)
@@ -169,10 +157,9 @@ class ControlUnit:
 
             case MuxIPrefetch.CACHE:
                 idx = (self.pc >> 2) & 0xF
+                cache_line = self.i_cache[idx]
                 bytes_word = list(
-                    (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
-                        4, byteorder="little"
-                    )
+                    (cache_line.data & 0xFFFFFFFF).to_bytes(4, byteorder="little")
                 )
                 for i in range(4):
                     if latches[i]:
@@ -186,10 +173,9 @@ class ControlUnit:
                 # offset == 11 -> [0, 0, 0, 1], [1, 1, 1, 0]
                 if offset == 0:
                     idx = (self.pc >> 2) & 0xF
+                    cache_line = self.i_cache[idx]
                     bytes_word = list(
-                        (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
-                            4, byteorder="little"
-                        )
+                        (cache_line.data & 0xFFFFFFFF).to_bytes(4, byteorder="little")
                     )
                     for i in range(4):
                         if latches[i]:
@@ -199,11 +185,10 @@ class ControlUnit:
                 else:
                     base_idx = (self.pc >> 2) & 0xF
                     idx = (base_idx + 1) & 0xF
+                    cache_line = self.i_cache[idx]
                     latches = [not latch for latch in latches]
                     bytes_word = list(
-                        (self.i_cache[idx].data & 0xFFFFFFFF).to_bytes(
-                            4, byteorder="little"
-                        )
+                        (cache_line.data & 0xFFFFFFFF).to_bytes(4, byteorder="little")
                     )
                     for i in range(4):
                         if latches[i]:
@@ -217,6 +202,7 @@ class ControlUnit:
     def is_stall(self) -> bool:
         memory_i_output = not self._is_cache_hit()
 
+        self.text_memory.tick(memory_i_output, False)
         self.data_path.tick(
             ram_output=self.mr.memory_d_output,
             ram_write=self.mr.memory_d_write,
@@ -224,19 +210,8 @@ class ControlUnit:
             io_write=self.mr.io_write,
         )
 
-        if memory_i_output and not self.rom_busy:
-            self.rom_countdown = 10
-            self.rom_busy = True
-        elif self.rom_busy and self.rom_countdown > 0:
-            self.rom_countdown -= 1
-
-        if self.rom_busy:
-            rom_ready = self.rom_countdown == 0
-        else:
-            rom_ready = True
-
         # анализ линий заморозки
-        rom_stalled = memory_i_output and not rom_ready
+        rom_stalled = memory_i_output and not self.text_memory.ready
         ram_stalled = self.mr.memory_d_output and not self.data_path.data_memory.ready
         port_num: int = self.data_path.td & 0x3
         io_device = self.data_path.io_devices[port_num]
@@ -245,24 +220,25 @@ class ControlUnit:
         # блокируем тактовый импульс до регистров процессора
         if rom_stalled or ram_stalled or io_stalled:
             return True
-        elif memory_i_output and rom_ready:
+        elif memory_i_output and self.text_memory.ready:
             self.cache_write()
             return True
 
         return False
 
     def tick(self) -> bool:
+        # на переднем фронте сигнала
         if self.mr.latch_mr and self.mr.micromem_output:
             self.mr = self.latch_mr()
 
         if self.is_stall():
             return True
 
+        # не меняем сразу, чтобы симулировать параллельное распространение сигналов
         next_i_prefetch: List[int] = list(self.i_prefetch)
         if self.mr.latch_i_prefetch:
             next_i_prefetch = self.latch_i_prefetch(self.mr.select_i_prefetch)
 
-        # не меняем сразу, чтобы симулировать параллельное распространение сигналов
         next_d_stack: List[int] = list(self.data_path.data_stack)
         if self.mr.latch_d_stack:
             next_d_stack = self.data_path.latch_d_stack(self.mr.select_s)
@@ -319,6 +295,7 @@ class ControlUnit:
         if self.mr.latch_mpc:
             next_mpc = self.latch_mpc(self.mr.select_mpc)
 
+        # на заднем фронте сигнала
         self.pc = next_pc
         self.tr = next_tr
         self.mpc = next_mpc
@@ -375,48 +352,8 @@ class ControlUnit:
                     )
                 case "dstack:dump":
                     return str(self.data_path.data_stack)
-                case "sr:v":
-                    return "1" if self.data_path.sr_v else "0"
-                case "sr:c":
-                    return "1" if self.data_path.sr_c else "0"
                 case "sr:flags":
                     return f"{'V' if self.data_path.sr_v else '-'}{'C' if self.data_path.sr_c else '-'}"
-                case _ if expr.startswith("memory:"):
-                    try:
-                        _, start_str, end_str = expr.split(":")
-                        start, end = int(start_str), int(end_str)
-                        return str(self.data_path.data_memory.memory[start:end])
-                    except (ValueError, IndexError):
-                        return "[Mem Error]"
-                case _ if expr.startswith("io:"):
-                    try:
-                        _, port_str, fmt = expr.split(":")
-                        port = int(port_str)
-                        device = self.data_path.io_devices.get(port)
-                        if not device:
-                            return "?"
-
-                        buf = device.output_buffer
-                        if fmt == "dec":
-                            return str(buf)
-                        elif fmt == "hex":
-                            return " ".join(f"{x:02x}" for x in buf)
-                        elif fmt == "sym":
-                            chars: List[str] = list()
-                            for x in buf:
-                                if 32 <= x <= 126:
-                                    chars.append(chr(x))
-                                elif x == 0:
-                                    chars.append(r"\0")
-                                elif x == 10:
-                                    chars.append(r"\n")
-                                else:
-                                    chars.append("?")
-                            return "".join(chars)
-                        else:
-                            return "?"
-                    except (ValueError, KeyError):
-                        return "?"
                 case _:
                     return f"{{{expr}}}"
 

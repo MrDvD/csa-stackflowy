@@ -50,6 +50,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
                 port_streams[2],
                 port_streams[3],
                 golden["data_memory_size"],
+                golden["text_memory_size"],
                 golden["limit"],
                 golden["view"],
             )

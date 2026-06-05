@@ -36,8 +36,7 @@
     % Memory
     \draw[data bus] (mem.north) -- (cache.south) node[above left, rotate=90] {\footnotesize iout};
     \draw[data bus] (i_prefetch.-50 |- cache.north) -- (i_prefetch.-50) node[above left, rotate=90] {\footnotesize word};
-    \draw[control bus] ([xshift=.5cm,yshift=.75cm]cache.20) |- node[pos=0.5, above right, rotate=90] {\footnotesize wr} (cache.20);
-    \draw[control bus] (cache.-20) -- +(.65,0) |- node[pos=0.25, above, rotate=90] {\footnotesize cache miss (oe)} (mem.east);
+    \draw[control bus] (cache.east) -- +(.65,0) |- node[pos=0.25, above, rotate=90] {\footnotesize cache miss (oe)} (mem.east);
 
     % Return Stack
     \draw[data bus] (mux_pc.north) -- (pc.south);
