@@ -1,5 +1,5 @@
 import os
-import sys
+import argparse
 import re
 import struct
 from typing import List, Dict, Tuple
@@ -583,8 +583,13 @@ def main(source: str, target: str) -> None:
 
 
 if __name__ == "__main__":
-    assert len(sys.argv) == 3, (
-        "Wrong arguments: translator.py <input_file> <target_prefix>"
+    parser = argparse.ArgumentParser(description="Translator for StackFlowy")
+    parser.add_argument(
+        "-s", "--source", required=True, help="Path to the source code file"
     )
-    _, source, target = sys.argv
-    main(source, target)
+    parser.add_argument(
+        "-t", "--target", required=True, help="Prefix for the target output files"
+    )
+    args = parser.parse_args()
+
+    main(args.source, args.target)
