@@ -42,7 +42,6 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             translator.main(source, target_prefix)
-            machine.SlicingLogger.slice_cfg = golden.get("slice", "all")
             machine.main(
                 target_prefix,
                 port_streams[0],
@@ -53,6 +52,7 @@ def test_translator_and_machine(golden: Any, caplog: pytest.LogCaptureFixture) -
                 golden["text_memory_size"],
                 golden["limit"],
                 golden["view"],
+                golden.get("slice", "all"),
             )
 
         with open(target_prefix + "_data_final.bin", "rb") as file:

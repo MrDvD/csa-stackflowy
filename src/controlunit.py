@@ -212,7 +212,9 @@ class ControlUnit:
 
         # анализ линий заморозки
         rom_stalled = memory_i_output and not self.text_memory.ready
-        ram_stalled = self.mr.memory_d_output and not self.data_path.data_memory.ready
+        ram_stalled = (
+            self.mr.memory_d_output or self.mr.memory_d_write
+        ) and not self.data_path.data_memory.ready
         port_num: int = self.data_path.td & 0x3
         io_device = self.data_path.io_devices[port_num]
         io_stalled = self.mr.io_output and not io_device.ready
@@ -332,8 +334,6 @@ class ControlUnit:
                     return f"{self.tr:08x}"
                 case "iprefetch:hex":
                     return f"{self._get_prefetch_value():08x}"
-                case "rstack:top":
-                    return str(self.return_stack[-1] if self.return_stack else 0)
                 case "rstack:dump":
                     return str(self.return_stack)
                 case "s:dec":
@@ -344,12 +344,6 @@ class ControlUnit:
                     return str(self.data_path.td)
                 case "td:hex":
                     return f"{self.data_path.td:08x}"
-                case "dstack:top":
-                    return str(
-                        self.data_path.data_stack[-1]
-                        if self.data_path.data_stack
-                        else 0
-                    )
                 case "dstack:dump":
                     return str(self.data_path.data_stack)
                 case "sr:flags":
