@@ -1,0 +1,58 @@
+% !TEX program = xelatex
+\documentclass[12pt]{article}
+
+\input{common/Preamble}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\vspace*{\fill}
+
+\begin{center}
+  \begin{adjustbox}{max width=\textwidth, max height=0.98\textheight}
+  \begin{tikzpicture}[processor arch, scale=1.58, transform shape]
+    \node[register] (io0) {IO$_0$};
+    \node[register, anchor=north, below=of io0] (io1) {IO$_1$};
+    \node[register, anchor=north, below=of io1] (io2) {IO$_2$};
+    \node[register, anchor=north, below=of io2] (io3) {IO$_3$};
+    \node[mux_flipped, anchor=south, rotate=90, yshift=2cm] at (io1.west) (mux_io_read) {IO Read};
+    \node[mux, anchor=north west, xshift=1.25cm, yshift=-1.5cm] at (io3.south east) (mux_busy) {Busy};
+    \node[mux, anchor=north, rotate=90, yshift=-7cm] at (io1.east) (mux_signal_map) {Signal Map};
+
+    \draw[control bus] ([xshift=-1.25cm]mux_busy.west) -- (mux_busy.west) node[pos=0.02, above right] {\footnotesize port};
+    \draw[control bus] ([yshift=-1.25cm]mux_io_read.west) -- (mux_io_read.west) node[pos=0.02, above right, rotate=90] {\footnotesize port};
+    \draw[control bus] ([yshift=-1.25cm]mux_signal_map.west) -- (mux_signal_map.west) node[pos=0.02, above right, rotate=90] {\footnotesize port};
+
+    \coordinate (data_in) at ([xshift=2cm]mux_busy.south);
+    \draw[data bus] (data_in) |- node[pos=0, rotate=90, above right] {\footnotesize data in} (io0.15);
+    \draw[data bus] (data_in |- io1.15) node[dot] {} -- (io1.15);
+    \draw[data bus] (data_in |- io2.15) node[dot] {} -- (io2.15);
+    \draw[data bus] (data_in |- io3.15) node[dot] {} -- (io3.15);
+    \draw[data bus] (mux_busy.south) |- node[pos=1, above right] {\footnotesize busy} ([xshift=-2.25cm, yshift=-.25cm]mux_busy.south);
+    \draw[data bus] (io0.-15) -| node[pos=0, below right] {SR$_0$} (mux_busy.40);
+    \draw[data bus] (io1.-15) -| node[pos=0, below right] {SR$_1$} (mux_busy.70);
+    \draw[data bus] (io2.-15) -| node[pos=0, below right] {SR$_2$} (mux_busy.110);
+    \draw[data bus] (io3.-15) -| node[pos=0, below right] {SR$_3$} (mux_busy.140);
+    \draw[data bus] (mux_io_read.north) -| node[pos=1, above right, rotate=90] {\footnotesize data out} ([yshift=-2.25cm, xshift=-.25cm]mux_io_read.north);
+    \draw[data bus] (io0.west) -- node[pos=0, above left] {\footnotesize dout} +(-1,0) |- (mux_io_read.-40);
+    \draw[data bus] (io1.west) -- node[pos=0, above left] {\footnotesize dout} +(-1,0) |- (mux_io_read.-70);
+    \draw[data bus] (io2.west) -- node[pos=0, above left] {\footnotesize dout} +(-1.25,0) |- (mux_io_read.-110);
+    \draw[data bus] (io3.west) -- node[pos=0, above left] {\footnotesize dout} +(-1.5,0) |- (mux_io_read.-140);
+    \draw[control bus] ([xshift=1.5cm]mux_signal_map.south) -- node[pos=0, above left] {\footnotesize oe,wr} (mux_signal_map.south);
+
+    \draw[control bus] (mux_signal_map.30) -- +(-.25,0) |- ([yshift=-.5cm]io0.-70) -- node[pos=0.5, right] {\footnotesize wr$_0$} (io0.-70);
+    \draw[control bus] (mux_signal_map.45) -- +(-.5,0) |- ([yshift=-.75cm]io0.-110) -- node[pos=0.5, above, rotate=90] {\footnotesize oe$_0$} (io0.-110);
+    \draw[control bus] (mux_signal_map.60) -- +(-1.5,0) |- ([yshift=-.5cm]io1.-70) -- node[pos=0.5, right] {\footnotesize wr$_1$} (io1.-70);
+    \draw[control bus] (mux_signal_map.75) -- +(-1.25,0) |- ([yshift=-.75cm]io1.-110) -- node[pos=0.5, above, rotate=90] {\footnotesize oe$_1$} (io1.-110);
+    \draw[control bus] (mux_signal_map.105) -- +(-1,0) |- ([yshift=-.5cm]io2.-70) -- node[pos=0.5, right] {\footnotesize wr$_2$} (io2.-70);
+    \draw[control bus] (mux_signal_map.120) -- +(-.75,0) |- ([yshift=-.75cm]io2.-110) -- node[pos=0.5, above, rotate=90] {\footnotesize oe$_2$} (io2.-110);
+    \draw[control bus] (mux_signal_map.135) -- +(-.5,0) |- ([yshift=-.5cm]io3.-70) -- node[pos=0.5, right] {\footnotesize wr$_3$} (io3.-70);
+    \draw[control bus] (mux_signal_map.150) -- +(-.25,0) |- ([yshift=-.75cm]io3.-110) -- node[pos=0.5, above, rotate=90] {\footnotesize oe$_3$} (io3.-110);
+  \end{tikzpicture}
+  \end{adjustbox}
+\end{center}
+
+\vspace*{\fill}
+
+\end{document}

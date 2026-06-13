@@ -1,0 +1,67 @@
+% !TEX program = xelatex
+\documentclass[12pt]{article}
+
+\input{common/Preamble}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\vspace*{\fill}
+
+\begin{center}
+  \begin{adjustbox}{max width=\textwidth, max height=0.98\textheight}
+  \begin{tikzpicture}[processor arch, scale=1.55, transform shape]
+    \node[register] (pi3) {PI$_3$};
+    \node[register, anchor=west, right=of pi3] (pi2) {PI$_2$};
+    \node[register, anchor=west, right=of pi2] (pi1) {PI$_1$};
+    \node[register, anchor=west, right=of pi1] (pi0) {PI$_0$};
+    \node[mux_flipped, anchor=north, yshift=-.5cm] at (pi3.south) (mux_pi3) {PI$_3$};
+    \node[mux_flipped, anchor=north, yshift=-.5cm] at (pi2.south) (mux_pi2) {PI$_2$};
+    \node[mux_flipped, anchor=north, yshift=-.5cm] at (pi1.south) (mux_pi1) {PI$_1$};
+    \node[mux, anchor=north, above=of pi1] (mux_mask) {Mask};
+    \node[register, anchor=south west, yshift=.5cm] at (mux_mask.top right corner) (mask1) {Mask$_1$};
+    \node[register, anchor=south, yshift=.5cm] at (mask1.north) (mask2) {Mask$_2$};
+    \node[register, anchor=north, yshift=-1.25cm] at (mux_pi2.south) (byte_aligner) {Byte Aligner};
+    \node[mux_flipped, anchor=south, yshift=3cm] at (pi3.north) (mux_cache_addr) {Cache Address};
+
+    \draw[control bus] ([xshift=1.25cm]mux_mask.east) -- (mux_mask.east) node[pos=0.02, above left] {\footnotesize select};
+    \draw[data bus] (mux_pi3.north) -- (pi3);
+    \draw[data bus] (mux_pi2.north) -- (pi2);
+    \draw[data bus] (mux_pi1.north) -- (pi1);
+    \draw[data bus] (pi3.west) -- ([xshift=-2cm]pi3.west) node[pos=0.98, above right] {\footnotesize to IR};
+    \draw[data bus] (pi2.west) -- +(-.85,0) |- ([yshift=-.5cm]mux_pi3.-50) -- (mux_pi3.-50);
+    \draw[data bus] (pi1.west) -- +(-.85,0) |- ([yshift=-.5cm]mux_pi2.-50) -- (mux_pi2.-50);
+    \draw[data bus] (pi0.west) -- +(-.85,0) |- ([yshift=-.5cm]mux_pi1.-50) -- (mux_pi1.-50);
+    \draw[control bus] ([xshift=-.25cm, yshift=1.5cm]mux_pi3.west) |- (mux_pi3.west) node[pos=0, below left, rotate=90, yshift=.1cm] {\footnotesize select};
+    \draw[control bus] ([xshift=-.25cm, yshift=1.5cm]mux_pi2.west) |- (mux_pi2.west) node[pos=0, below left, rotate=90, yshift=.1cm] {\footnotesize select};
+    \draw[control bus] ([xshift=-.25cm, yshift=1.5cm]mux_pi1.west) |- (mux_pi1.west) node[pos=0, below left, rotate=90, yshift=.1cm] {\footnotesize select};
+    \draw[control bus] (mux_mask.south) -- +(0,-.5) node[dot] (mask_main_branch) node[pos=.5, right] {\footnotesize masks} -| node[pos=1, above left] {\footnotesize \& latch} (pi0.north);
+    \draw[control bus] (mask_main_branch) -| node[pos=1, above right] {\footnotesize \& latch} node[dot] (mask_second_branch) {} (pi2.north);
+    \draw[control bus] (mask_second_branch) -| node[pos=1, above right] {\footnotesize \& latch} (pi3.north);
+    \draw[control bus] (mask_main_branch) -- node[pos=1, above right] {\footnotesize \& latch} (pi1.north);
+    \draw[data bus] (byte_aligner.north) -- +(0,.5) node[dot] (byte_aligner_branch) {} -| (mux_pi3.-130);
+    \draw[data bus] (byte_aligner_branch) -| node[dot, pos=.5] (byte_aligner_branch_second) {} (mux_pi1.-130);
+    \draw[data bus] (byte_aligner_branch_second) -| (pi0.south);
+    \draw[data bus] (mux_pi2.-130 |- byte_aligner_branch) node[dot] -- (mux_pi2.-130);
+    \draw[data bus] (mask1.west) -| (mux_mask.50);
+    \draw[data bus] (mask2.west) -| (mux_mask.130);
+    \draw[data bus] ([yshift=-2cm]mux_cache_addr.-130) -- node[pos=.5, dot] (pc_cache_branch) {} node[pos=0, above right, rotate=90] {\footnotesize PC $\& \sim 3$} (mux_cache_addr.-130);
+    \draw[data bus] (pc_cache_branch) -| node[pos=0, above right] {\scriptsize (+4)} (mux_cache_addr.-50);
+    \draw[control bus] ([xshift=1.25cm]mux_cache_addr.east) -- node[pos=0, above left] {\footnotesize select} (mux_cache_addr.east);
+    \draw[data bus] (mux_cache_addr.north) -- node[pos=.98, above left, rotate=90] {\footnotesize to icache} ([yshift=1.75cm]mux_cache_addr.north);
+    \coordinate (mask_offset_branch) at ([xshift=1.25cm]mask2.east);
+    \draw[data bus] (mask_offset_branch) |- (byte_aligner.15);
+    \node[dot] at (mask_offset_branch |- mask1.east) {};
+    \coordinate (mask_offset_branch_second) at ([xshift=1.25cm]mask_offset_branch |- mask1.east);
+    \draw[data bus] (mask_offset_branch_second) -- node[pos=0, above left] {\footnotesize PC$\&3$} (mask1.east);
+    \draw[data bus] (mask_offset_branch) -- (mask2.east);
+    \draw[data bus] ([xshift=1.25cm]byte_aligner.-15) -- node[pos=0, above left] {\footnotesize word} (byte_aligner.-15);
+    \draw[control bus] ([xshift=-1.25cm]byte_aligner.west) -- node[pos=0, above right] {\footnotesize select} (byte_aligner.west);
+  \end{tikzpicture}
+  \end{adjustbox}
+\end{center}
+
+\vspace*{\fill}
+
+\end{document}
