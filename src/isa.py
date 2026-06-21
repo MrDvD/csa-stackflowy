@@ -165,5 +165,5 @@ class Macros:
 
 
 class Segment:
-    data_regex = re.compile(r"\.data(?:@(0x\d+|\d+))?")
-    text_regex = re.compile(r"\.text(?:@(0x\d+|\d+))?")
+    data_regex = re.compile(rf"\.data(?:@({Numeral.pattern}))?")
+    text_regex = re.compile(rf"\.text(?:@({Numeral.pattern}))?")

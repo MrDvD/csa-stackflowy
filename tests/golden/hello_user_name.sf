@@ -34,7 +34,7 @@ _main:
 
   $PRINT(_newline)
 
-  @if (USE_EXTENDED == 1) {
+  @if ($USE_EXTENDED == 1) {
     $PRINT(_greet_ext)
   } @else {
     $PRINT(_greet_sht)

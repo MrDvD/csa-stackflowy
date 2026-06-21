@@ -1,0 +1,666 @@
+in_source: |-
+  ; Программа сортировки числового массива, заканчивающегося нулём
+  ; Считывает числа, сохраняет в память, сортирует пузырьком и выводит результат
+
+  @define STDIN 0
+  @define STDOUT 3
+
+  @define ARR_ADDR 0xFF
+
+  @macro READ_BYTE() {
+    ; expecting on stack: [ addr ]
+    ( addr : val ) <= MEM_DATA
+    ( : 0xFF )
+    ( val, mask : val & mask )
+  }
+
+  @macro WRITE_BYTE_TO_ADDR() {
+    ; expecting on stack: [ addr, val, addr ]
+    ( addr : old_word ) <= MEM_DATA
+    ( : 0xFFFFFF00 )
+    ( old_word, m : old_word & m )
+    ( val, cleared : val | cleared )
+    ( addr, final_word : final_word, addr )
+    ( val, addr : ) => MEM_DATA
+  }
+
+      .data
+  _ptr_var:     $ARR_ADDR
+  _len_var:     0x0
+  _swapped_var: 0x0
+  _n_var:       0x0
+  _i_var:       0x0
+  _curr_ptr:    0x0
+
+      .data@$ARR_ADDR
+  _array_start: 0x0
+
+      .text
+
+  _main:
+  _read_loop:
+    ( : $STDIN )
+    ( port : val ) <= IN
+
+    ( val : val, val )
+    ( : 0 )
+    ( val, zero : val == zero )
+    <? _sort_init >
+
+    ( : _ptr_var )
+    ( addr : ptr ) <= MEM_DATA
+    ( val, ptr : ptr, val )
+    ( : _ptr_var )
+    ( addr : ptr ) <= MEM_DATA
+    $WRITE_BYTE_TO_ADDR()
+
+    ( : _ptr_var )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( : _ptr_var )
+    ( val, addr : ) => MEM_DATA
+
+    ( : _len_var )
+    ( addr : len ) <= MEM_DATA
+    ( : 1 )
+    ( len, one : len + one )
+    ( : _len_var )
+    ( val, addr : ) => MEM_DATA
+
+    < _read_loop >
+
+  _sort_init:
+    ( zero_val : )
+
+    ( : _len_var )
+    ( addr : len ) <= MEM_DATA
+    ( : _n_var )
+    ( val, addr : ) => MEM_DATA
+
+  _outer_loop:
+    ; n <= 1?
+    ( : _n_var )
+    ( addr : n ) <= MEM_DATA
+    ( : 1 )
+    ( n, one : n <= one )
+    <? _print_init >
+
+    ; swapped = 0
+    ( : 0 )
+    ( : _swapped_var )
+    ( val, addr : ) => MEM_DATA
+
+    ; curr_ptr = ARR_ADDR
+    ( : $ARR_ADDR )
+    ( : _curr_ptr )
+    ( val, addr : ) => MEM_DATA
+
+    ; i = 0
+    ( : 0 )
+    ( : _i_var )
+    ( val, addr : ) => MEM_DATA
+
+  _inner_loop:
+    ; i >= (n - 1)?
+    ( : _n_var )
+    ( addr : n ) <= MEM_DATA
+    ( : 1 )
+    ( n, one : n - one )
+    ( : _i_var )
+    ( addr : i ) <= MEM_DATA
+    ( limit, i : limit <= i )
+    <? _inner_done >
+
+    ; val1 = arr[ptr]
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    $READ_BYTE()
+
+    ; val2 = arr[ptr + 1]
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    $READ_BYTE()
+
+    ; val1 <= val2 --> skipping swap
+    ( val1, val2 : val1 <= val2 )
+    <? _skip_swap >
+    
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    $READ_BYTE()
+    
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    $READ_BYTE()
+    
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( val2, ptr : ptr, val2 )
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    $WRITE_BYTE_TO_ADDR()
+
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( val1, next_ptr : next_ptr, val1 )
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    $WRITE_BYTE_TO_ADDR()
+    
+    ( : 1 )
+    ( : _swapped_var )
+    ( val, addr : ) => MEM_DATA
+
+  _skip_swap:
+    ; i += 1
+    ( : _i_var )
+    ( addr : i ) <= MEM_DATA
+    ( : 1 )
+    ( i, one : i + one )
+    ( : _i_var )
+    ( val, addr : ) => MEM_DATA
+    
+    ; curr_ptr += 1
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( : _curr_ptr )
+    ( val, addr : ) => MEM_DATA
+
+    < _inner_loop >
+
+  _inner_done:
+    ; swapped == 0 --> array is sorted
+    ( : _swapped_var )
+    ( addr : swapped ) <= MEM_DATA
+    ( : 0 )
+    ( swapped, zero : swapped == zero )
+    <? _print_init >
+    
+    ; n -= 1
+    ( : _n_var )
+    ( addr : n ) <= MEM_DATA
+    ( : 1 )
+    ( n, one : n - one )
+    ( : _n_var )
+    ( val, addr : ) => MEM_DATA
+    
+    < _outer_loop >
+
+  _print_init:
+    ( : $ARR_ADDR )
+    ( : _curr_ptr )
+    ( val, addr : ) => MEM_DATA
+
+  _print_loop:
+    ( : _len_var )
+    ( addr : len ) <= MEM_DATA
+    ( : 0 )
+    ( len, zero : len == zero )
+    <? _exit >
+
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    $READ_BYTE()
+
+    ( : $STDOUT )
+    ( val, port : ) => OUT
+
+    ; curr_ptr += 1
+    ( : _curr_ptr )
+    ( addr : ptr ) <= MEM_DATA
+    ( : 1 )
+    ( ptr, one : ptr + one )
+    ( : _curr_ptr )
+    ( val, addr : ) => MEM_DATA
+
+    ; len -= 1
+    ( : _len_var )
+    ( addr : len ) <= MEM_DATA
+    ( : 1 )
+    ( len, one : len - one )
+    ( : _len_var )
+    ( val, addr : ) => MEM_DATA
+
+    < _print_loop >
+
+  _exit:
+    <...>
+port_mapped_io:
+  0: [73, 39, 109, 32, 97, 32, 99, 97, 116, 0]
+  1: []
+  2: []
+  3: []
+data_memory_size: 512
+text_memory_size: 512
+limit: 30000
+slice: ["head", "200"]
+view: |-
+  PC: {pc:hex} mPC: {mpc:hex} IPF: {iprefetch:hex} IR: {ir:mnemonic} S: {s:dec} Td: {td:dec}
+out_data: !!binary |
+  CAEAAAAAAAAAAAAABQAAAAQAAAAIAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICAnSWFhY210AAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+out_data_hex: |-
+  0 - 0x8 - .
+  1 - 0x1 - .
+  2...11 - 0x00 - .
+  12 - 0x5 - .
+  13...15 - 0x00 - .
+  16 - 0x4 - .
+  17...19 - 0x00 - .
+  20 - 0x8 - .
+  21 - 0x1 - .
+  22...254 - 0x00 - .
+  255 - 0x20 -  
+  256 - 0x20 -  
+  257 - 0x27 - '
+  258 - 0x49 - I
+  259 - 0x61 - a
+  260 - 0x61 - a
+  261 - 0x63 - c
+  262 - 0x6d - m
+  263 - 0x74 - t
+  264...511 - 0x00 - .
+out_text: !!binary |
+  FAUAAAAcAAAAABoeHAAAAAAPFVcAAAAcAAAAABgfHAAAAAAYGBwA////CAkfGRwAAAAAGBwBAAAA
+  BBwAAAAAGRwEAAAAGBwBAAAABBwEAAAAGRQFAAAAHRwEAAAAGBwMAAAAGRwMAAAAGBwBAAAAExWK
+  AQAAHAAAAAAcCAAAABkc/wAAABwUAAAAGRwAAAAAHBAAAAAZHAwAAAAYHAEAAAAFHBAAAAAYExVi
+  AQAAHBQAAAAYGBz/AAAACBwUAAAAGBwBAAAABBgc/wAAAAgTFTkBAAAcFAAAABgYHP8AAAAIHBQA
+  AAAYHAEAAAAEGBz/AAAACBwUAAAAGB8cFAAAABgYHAD///8ICR8ZHBQAAAAYHAEAAAAEHxwUAAAA
+  GBwBAAAABBgcAP///wgJHxkcAQAAABwIAAAAGRwQAAAAGBwBAAAABBwQAAAAGRwUAAAAGBwBAAAA
+  BBwUAAAAGRSWAAAAHAgAAAAYHAAAAAAPFYoBAAAcDAAAABgcAQAAAAUcDAAAABkUZAAAABz/AAAA
+  HBQAAAAZHAQAAAAYHAAAAAAPFeIBAAAcFAAAABgYHP8AAAAIHAMAAAAbHBQAAAAYHAEAAAAEHBQA
+  AAAZHAQAAAAYHAEAAAAFHAQAAAAZFJUBAAAB
+out_text_hex: |-
+  0x00000000 - 0x1405000000 - jump 5
+  0x00000005 - 0x1c00000000 - push 0
+  0x0000000a - 0x1a - in
+  0x0000000b - 0x1e - duplicate
+  0x0000000c - 0x1c00000000 - push 0
+  0x00000011 - 0x0f - is_==
+  0x00000012 - 0x1557000000 - jump_if 87
+  0x00000017 - 0x1c00000000 - push 0
+  0x0000001c - 0x18 - load
+  0x0000001d - 0x1f - swap
+  0x0000001e - 0x1c00000000 - push 0
+  0x00000023 - 0x18 - load
+  0x00000024 - 0x18 - load
+  0x00000025 - 0x1c00ffffff - push 4294967040
+  0x0000002a - 0x08 - and
+  0x0000002b - 0x09 - or
+  0x0000002c - 0x1f - swap
+  0x0000002d - 0x19 - store
+  0x0000002e - 0x1c00000000 - push 0
+  0x00000033 - 0x18 - load
+  0x00000034 - 0x1c01000000 - push 1
+  0x00000039 - 0x04 - add
+  0x0000003a - 0x1c00000000 - push 0
+  0x0000003f - 0x19 - store
+  0x00000040 - 0x1c04000000 - push 4
+  0x00000045 - 0x18 - load
+  0x00000046 - 0x1c01000000 - push 1
+  0x0000004b - 0x04 - add
+  0x0000004c - 0x1c04000000 - push 4
+  0x00000051 - 0x19 - store
+  0x00000052 - 0x1405000000 - jump 5
+  0x00000057 - 0x1d - pop
+  0x00000058 - 0x1c04000000 - push 4
+  0x0000005d - 0x18 - load
+  0x0000005e - 0x1c0c000000 - push 12
+  0x00000063 - 0x19 - store
+  0x00000064 - 0x1c0c000000 - push 12
+  0x00000069 - 0x18 - load
+  0x0000006a - 0x1c01000000 - push 1
+  0x0000006f - 0x13 - is_<=
+  0x00000070 - 0x158a010000 - jump_if 394
+  0x00000075 - 0x1c00000000 - push 0
+  0x0000007a - 0x1c08000000 - push 8
+  0x0000007f - 0x19 - store
+  0x00000080 - 0x1cff000000 - push 255
+  0x00000085 - 0x1c14000000 - push 20
+  0x0000008a - 0x19 - store
+  0x0000008b - 0x1c00000000 - push 0
+  0x00000090 - 0x1c10000000 - push 16
+  0x00000095 - 0x19 - store
+  0x00000096 - 0x1c0c000000 - push 12
+  0x0000009b - 0x18 - load
+  0x0000009c - 0x1c01000000 - push 1
+  0x000000a1 - 0x05 - substract
+  0x000000a2 - 0x1c10000000 - push 16
+  0x000000a7 - 0x18 - load
+  0x000000a8 - 0x13 - is_<=
+  0x000000a9 - 0x1562010000 - jump_if 354
+  0x000000ae - 0x1c14000000 - push 20
+  0x000000b3 - 0x18 - load
+  0x000000b4 - 0x18 - load
+  0x000000b5 - 0x1cff000000 - push 255
+  0x000000ba - 0x08 - and
+  0x000000bb - 0x1c14000000 - push 20
+  0x000000c0 - 0x18 - load
+  0x000000c1 - 0x1c01000000 - push 1
+  0x000000c6 - 0x04 - add
+  0x000000c7 - 0x18 - load
+  0x000000c8 - 0x1cff000000 - push 255
+  0x000000cd - 0x08 - and
+  0x000000ce - 0x13 - is_<=
+  0x000000cf - 0x1539010000 - jump_if 313
+  0x000000d4 - 0x1c14000000 - push 20
+  0x000000d9 - 0x18 - load
+  0x000000da - 0x18 - load
+  0x000000db - 0x1cff000000 - push 255
+  0x000000e0 - 0x08 - and
+  0x000000e1 - 0x1c14000000 - push 20
+  0x000000e6 - 0x18 - load
+  0x000000e7 - 0x1c01000000 - push 1
+  0x000000ec - 0x04 - add
+  0x000000ed - 0x18 - load
+  0x000000ee - 0x1cff000000 - push 255
+  0x000000f3 - 0x08 - and
+  0x000000f4 - 0x1c14000000 - push 20
+  0x000000f9 - 0x18 - load
+  0x000000fa - 0x1f - swap
+  0x000000fb - 0x1c14000000 - push 20
+  0x00000100 - 0x18 - load
+  0x00000101 - 0x18 - load
+  0x00000102 - 0x1c00ffffff - push 4294967040
+  0x00000107 - 0x08 - and
+  0x00000108 - 0x09 - or
+  0x00000109 - 0x1f - swap
+  0x0000010a - 0x19 - store
+  0x0000010b - 0x1c14000000 - push 20
+  0x00000110 - 0x18 - load
+  0x00000111 - 0x1c01000000 - push 1
+  0x00000116 - 0x04 - add
+  0x00000117 - 0x1f - swap
+  0x00000118 - 0x1c14000000 - push 20
+  0x0000011d - 0x18 - load
+  0x0000011e - 0x1c01000000 - push 1
+  0x00000123 - 0x04 - add
+  0x00000124 - 0x18 - load
+  0x00000125 - 0x1c00ffffff - push 4294967040
+  0x0000012a - 0x08 - and
+  0x0000012b - 0x09 - or
+  0x0000012c - 0x1f - swap
+  0x0000012d - 0x19 - store
+  0x0000012e - 0x1c01000000 - push 1
+  0x00000133 - 0x1c08000000 - push 8
+  0x00000138 - 0x19 - store
+  0x00000139 - 0x1c10000000 - push 16
+  0x0000013e - 0x18 - load
+  0x0000013f - 0x1c01000000 - push 1
+  0x00000144 - 0x04 - add
+  0x00000145 - 0x1c10000000 - push 16
+  0x0000014a - 0x19 - store
+  0x0000014b - 0x1c14000000 - push 20
+  0x00000150 - 0x18 - load
+  0x00000151 - 0x1c01000000 - push 1
+  0x00000156 - 0x04 - add
+  0x00000157 - 0x1c14000000 - push 20
+  0x0000015c - 0x19 - store
+  0x0000015d - 0x1496000000 - jump 150
+  0x00000162 - 0x1c08000000 - push 8
+  0x00000167 - 0x18 - load
+  0x00000168 - 0x1c00000000 - push 0
+  0x0000016d - 0x0f - is_==
+  0x0000016e - 0x158a010000 - jump_if 394
+  0x00000173 - 0x1c0c000000 - push 12
+  0x00000178 - 0x18 - load
+  0x00000179 - 0x1c01000000 - push 1
+  0x0000017e - 0x05 - substract
+  0x0000017f - 0x1c0c000000 - push 12
+  0x00000184 - 0x19 - store
+  0x00000185 - 0x1464000000 - jump 100
+  0x0000018a - 0x1cff000000 - push 255
+  0x0000018f - 0x1c14000000 - push 20
+  0x00000194 - 0x19 - store
+  0x00000195 - 0x1c04000000 - push 4
+  0x0000019a - 0x18 - load
+  0x0000019b - 0x1c00000000 - push 0
+  0x000001a0 - 0x0f - is_==
+  0x000001a1 - 0x15e2010000 - jump_if 482
+  0x000001a6 - 0x1c14000000 - push 20
+  0x000001ab - 0x18 - load
+  0x000001ac - 0x18 - load
+  0x000001ad - 0x1cff000000 - push 255
+  0x000001b2 - 0x08 - and
+  0x000001b3 - 0x1c03000000 - push 3
+  0x000001b8 - 0x1b - out
+  0x000001b9 - 0x1c14000000 - push 20
+  0x000001be - 0x18 - load
+  0x000001bf - 0x1c01000000 - push 1
+  0x000001c4 - 0x04 - add
+  0x000001c5 - 0x1c14000000 - push 20
+  0x000001ca - 0x19 - store
+  0x000001cb - 0x1c04000000 - push 4
+  0x000001d0 - 0x18 - load
+  0x000001d1 - 0x1c01000000 - push 1
+  0x000001d6 - 0x05 - substract
+  0x000001d7 - 0x1c04000000 - push 4
+  0x000001dc - 0x19 - store
+  0x000001dd - 0x1495010000 - jump 405
+  0x000001e2 - 0x01 - halt
+out_stdout: |
+  outputbuffer[0]: []
+  outputbuffer[1]: []
+  outputbuffer[2]: []
+  outputbuffer[3]: [32, 32, 39, 73, 97, 97, 99, 109, 116]
+  
+  ticks: 29407
+out_log: |
+  0 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  1 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  2 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  3 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  4 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  5 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  6 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  7 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  8 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  9 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 0 Td: 0
+  10 [ ] | PC: 00000000 mPC: 01 IPF: 00000514 IR: no_op S: 0 Td: 0
+  11 [ ] | PC: 00000001 mPC: 02 IPF: 00000005 IR: jump  S: 0 Td: 0
+  12 [ ] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  13 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  14 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  15 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  16 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  17 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  18 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  19 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  20 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  21 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  22 [S] | PC: 00000001 mPC: 05 IPF: 00000005 IR: jump  S: 0 Td: 0
+  23 [ ] | PC: 00000001 mPC: 06 IPF: 00000005 IR: jump  S: 0 Td: 0
+  24 [ ] | PC: 00000005 mPC: 00 IPF: 00000005 IR: jump  S: 0 Td: 0
+  25 [ ] | PC: 00000005 mPC: 01 IPF: 0000001c IR: jump  S: 0 Td: 0
+  26 [ ] | PC: 00000006 mPC: 02 IPF: 00000000 IR: push  S: 0 Td: 0
+  27 [ ] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  28 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  29 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  30 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  31 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  32 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  33 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  34 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  35 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  36 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  37 [S] | PC: 00000006 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 0
+  38 [ ] | PC: 00000006 mPC: 0f IPF: 00000000 IR: push  S: 0 Td: 0
+  39 [ ] | PC: 0000000a mPC: 00 IPF: 00000000 IR: push  S: 0 Td: 0
+  40 [ ] | PC: 0000000a mPC: 01 IPF: 00001e1a IR: push  S: 0 Td: 0
+  41 [ ] | PC: 0000000b mPC: 02 IPF: 0000001e IR: in    S: 0 Td: 0
+  42 [ ] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  43 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  44 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  45 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  46 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  47 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  48 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  49 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  50 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  51 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  52 [S] | PC: 0000000b mPC: 26 IPF: 0000001e IR: in    S: 0 Td: 0
+  53 [ ] | PC: 0000000b mPC: 00 IPF: 0000001e IR: in    S: 0 Td: 73
+  54 [ ] | PC: 0000000b mPC: 01 IPF: 0000001e IR: in    S: 0 Td: 73
+  55 [ ] | PC: 0000000c mPC: 02 IPF: 00000000 IR: dupli S: 0 Td: 73
+  56 [ ] | PC: 0000000c mPC: 10 IPF: 00000000 IR: dupli S: 0 Td: 73
+  57 [ ] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  58 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  59 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  60 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  61 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  62 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  63 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  64 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  65 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  66 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  67 [S] | PC: 0000000c mPC: 00 IPF: 00000000 IR: dupli S: 73 Td: 73
+  68 [ ] | PC: 0000000c mPC: 01 IPF: 0000001c IR: dupli S: 73 Td: 73
+  69 [ ] | PC: 0000000d mPC: 02 IPF: 00000000 IR: push  S: 73 Td: 73
+  70 [ ] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  71 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  72 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  73 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  74 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  75 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  76 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  77 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  78 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  79 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  80 [S] | PC: 0000000d mPC: 0e IPF: 00000000 IR: push  S: 73 Td: 73
+  81 [ ] | PC: 0000000d mPC: 0f IPF: 00000000 IR: push  S: 73 Td: 73
+  82 [ ] | PC: 00000011 mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  83 [ ] | PC: 00000011 mPC: 01 IPF: 0057150f IR: push  S: 73 Td: 0
+  84 [ ] | PC: 00000012 mPC: 02 IPF: 00005715 IR: is_== S: 73 Td: 0
+  85 [ ] | PC: 00000012 mPC: 19 IPF: 00005715 IR: is_== S: 73 Td: 0
+  86 [ ] | PC: 00000012 mPC: 00 IPF: 00005715 IR: is_== S: 73 Td: 0
+  87 [ ] | PC: 00000012 mPC: 01 IPF: 00005715 IR: is_== S: 73 Td: 0
+  88 [ ] | PC: 00000013 mPC: 02 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  89 [ ] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  90 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  91 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  92 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  93 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  94 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  95 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  96 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  97 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  98 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  99 [S] | PC: 00000013 mPC: 09 IPF: 00000057 IR: jump_ S: 73 Td: 0
+  100 [ ] | PC: 00000013 mPC: 0a IPF: 00000057 IR: jump_ S: 73 Td: 0
+  101 [ ] | PC: 00000017 mPC: 00 IPF: 00000057 IR: jump_ S: 0 Td: 73
+  102 [ ] | PC: 00000017 mPC: 01 IPF: 0000001c IR: jump_ S: 0 Td: 73
+  103 [ ] | PC: 00000018 mPC: 02 IPF: 00000000 IR: push  S: 0 Td: 73
+  104 [ ] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  105 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  106 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  107 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  108 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  109 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  110 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  111 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  112 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  113 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  114 [S] | PC: 00000018 mPC: 0e IPF: 00000000 IR: push  S: 0 Td: 73
+  115 [ ] | PC: 00000018 mPC: 0f IPF: 00000000 IR: push  S: 0 Td: 73
+  116 [ ] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  117 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  118 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  119 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  120 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  121 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  122 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  123 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  124 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  125 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  126 [S] | PC: 0000001c mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  127 [ ] | PC: 0000001c mPC: 01 IPF: 001c1f18 IR: push  S: 73 Td: 0
+  128 [ ] | PC: 0000001d mPC: 02 IPF: 00001c1f IR: load  S: 73 Td: 0
+  129 [ ] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  130 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  131 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  132 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  133 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  134 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  135 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  136 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  137 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  138 [S] | PC: 0000001d mPC: 23 IPF: 00001c1f IR: load  S: 73 Td: 0
+  139 [ ] | PC: 0000001d mPC: 00 IPF: 00001c1f IR: load  S: 73 Td: 255
+  140 [ ] | PC: 0000001d mPC: 01 IPF: 00001c1f IR: load  S: 73 Td: 255
+  141 [ ] | PC: 0000001e mPC: 02 IPF: 0000001c IR: swap  S: 73 Td: 255
+  142 [ ] | PC: 0000001e mPC: 22 IPF: 0000001c IR: swap  S: 73 Td: 255
+  143 [ ] | PC: 0000001e mPC: 00 IPF: 0000001c IR: swap  S: 255 Td: 73
+  144 [ ] | PC: 0000001e mPC: 01 IPF: 0000001c IR: swap  S: 255 Td: 73
+  145 [ ] | PC: 0000001f mPC: 02 IPF: 00000000 IR: push  S: 255 Td: 73
+  146 [ ] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  147 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  148 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  149 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  150 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  151 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  152 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  153 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  154 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  155 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  156 [S] | PC: 0000001f mPC: 0e IPF: 00000000 IR: push  S: 255 Td: 73
+  157 [ ] | PC: 0000001f mPC: 0f IPF: 00000000 IR: push  S: 255 Td: 73
+  158 [ ] | PC: 00000023 mPC: 00 IPF: 00000000 IR: push  S: 73 Td: 0
+  159 [ ] | PC: 00000023 mPC: 01 IPF: 00000018 IR: push  S: 73 Td: 0
+  160 [ ] | PC: 00000024 mPC: 02 IPF: 00000000 IR: load  S: 73 Td: 0
+  161 [ ] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  162 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  163 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  164 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  165 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  166 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  167 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  168 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  169 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  170 [S] | PC: 00000024 mPC: 23 IPF: 00000000 IR: load  S: 73 Td: 0
+  171 [ ] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  172 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  173 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  174 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  175 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  176 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  177 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  178 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  179 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  180 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  181 [S] | PC: 00000024 mPC: 00 IPF: 00000000 IR: load  S: 73 Td: 255
+  182 [ ] | PC: 00000024 mPC: 01 IPF: ff001c18 IR: load  S: 73 Td: 255
+  183 [ ] | PC: 00000025 mPC: 02 IPF: 00ff001c IR: load  S: 73 Td: 255
+  184 [ ] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  185 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  186 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  187 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  188 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  189 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  190 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  191 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  192 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  193 [S] | PC: 00000025 mPC: 23 IPF: 00ff001c IR: load  S: 73 Td: 255
+  194 [ ] | PC: 00000025 mPC: 00 IPF: 00ff001c IR: load  S: 73 Td: 0
+  195 [ ] | PC: 00000025 mPC: 01 IPF: 00ff001c IR: load  S: 73 Td: 0
+  196 [ ] | PC: 00000026 mPC: 02 IPF: 0000ff00 IR: push  S: 73 Td: 0
+  197 [ ] | PC: 00000026 mPC: 0e IPF: 0000ff00 IR: push  S: 73 Td: 0
+  198 [S] | PC: 00000026 mPC: 0e IPF: 0000ff00 IR: push  S: 73 Td: 0
+  199 [S] | PC: 00000026 mPC: 0e IPF: 0000ff00 IR: push  S: 73 Td: 0
