@@ -1,0 +1,34 @@
+% !TEX program = xelatex
+\documentclass[12pt]{article}
+
+\input{common/Preamble}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\vspace*{\fill}
+
+\begin{center}
+  \begin{adjustbox}{max width=\textwidth, max height=0.98\textheight}
+  \begin{tikzpicture}[processor arch, scale=2.25, transform shape]
+    \node[memory] (i_cache) {SRAM: \\ ICache};
+    \node[memory, anchor=west, xshift=2.25cm, minimum height=6cm] at (i_cache.east) (i_mem) {Memory$^*$: \\ \textit{Instructions}};
+    \node[register, anchor=north east, xshift=-1cm, yshift=-1cm] at (i_cache.south west) (comp) {Comparator \\ (27 bit)};
+
+    \draw[data bus] ([yshift=5cm, xshift=-2cm]comp.90) -| node[pos=.5] (addr_branch) {} node[pos=0.02, above right] {\footnotesize addr}  (comp.90);
+    \draw[data bus] ([yshift=.5cm, xshift=-1.5cm]comp.120) -| node[pos=0.02, above right] {\footnotesize V$_1\equiv 1$}  (comp.120);
+    \draw[data bus] (i_cache.195) -| node[pos=.5, dot] (word_branch) {} node[pos=0.02, above left] {\footnotesize cache line} node[pos=0.98, above right] {\footnotesize V$_2$, tag$_2$} (comp.60);
+    \draw[data bus] (word_branch) -- node[pos=0.98, above left, rotate=90] {\footnotesize word} +(0,5.25);
+    \draw[data bus] (addr_branch |- i_cache.165) node[dot] {} node[above left, rotate=90] {\footnotesize tag$_1$} -- node[pos=0.98, above left] {\footnotesize index}  (i_cache.165);
+    \draw[data bus] (i_mem.west |- i_cache.-15) -- node[pos=0.98, above right] {\footnotesize iout}  (i_cache.-15);
+    \draw[data bus] ([xshift=1.5cm]i_cache.15) -- node[pos=0.98, above right] {\footnotesize V$_\text{new}\equiv 1$}  (i_cache.15);
+    \draw[control bus] (comp.east) -| node[pos=0, dot_inv] {} node[pos=.5, dot] (miss_branch) {} node[pos=0.02, above right] {\footnotesize cache miss} node[pos=0.98, above left, rotate=90] {\footnotesize wr} (i_cache.south);
+    \draw[control bus] (miss_branch) -| ([xshift=-1cm]i_mem.-130) -- node[pos=0.98, above left] {\footnotesize oe} (i_mem.-130);
+  \end{tikzpicture}
+  \end{adjustbox}
+\end{center}
+
+\vspace*{\fill}
+
+\end{document}

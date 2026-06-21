@@ -12,7 +12,7 @@
 \begin{center}
   \begin{adjustbox}{max width=\textwidth, max height=0.98\textheight}
   \begin{tikzpicture}[processor arch, scale=1.45, transform shape]
-    \node[memory, minimum height=8cm] (mem) {Memory:\\ \textit{Data} \\ \textit{(RAM)}};
+    \node[memory, minimum height=8cm] (mem) {Memory:\\ \textit{Data}};
     \node[alu, anchor=south east, xshift=-4cm] at (mem.south west) (alu) {ALU};
     \node[mux, anchor=top left corner, yshift=2cm, xshift=-.5cm] at (alu.top left corner) (mux_alu_left) {ALU \\ Left};
     \node[mux, anchor=top right corner, yshift=2cm, xshift=.5cm] at (alu.top right corner) (mux_alu_right) {ALU \\ Right};

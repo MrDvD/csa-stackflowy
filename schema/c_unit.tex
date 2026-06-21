@@ -12,8 +12,8 @@
 \begin{center}
   \begin{adjustbox}{max width=\textwidth, max height=0.99\textheight}
   \begin{tikzpicture}[processor arch, scale=1.59, transform shape]
-    \node[memory, minimum height=6cm] (mem) {Memory:\\ \textit{Instructions} \\ \textit{(ROM)}};
-    \node[memory, minimum height=2cm, anchor=south, yshift=1cm] at (mem.north) (cache) {Cache:\\ \textit{Instructions}};
+    \node[memory, minimum height=6cm] (mem) {Memory:\\ \textit{Instructions}};
+    \node[memory, minimum height=2cm, anchor=south, yshift=1cm] at (mem.north) (cache) {Cache Block};
     \node[register, anchor=south, yshift=1cm] at (cache.north) (i_prefetch) {Prefetch:\\ \textit{Instructions}};
 
     \node[memory, minimum height=3cm, anchor=south east, xshift=-1cm] at (mem.south west) (r_stack) {Stack:\\ \textit{Return}};
@@ -23,7 +23,7 @@
     \node[register, anchor=south, yshift=.5cm] at (mux_pc.north) (pc) {PC};
 
     \begin{registergroup}{micro_processor}{$\mu$CU}
-      \node[memory, minimum height=3cm, anchor=south east, xshift=-2.5cm] at (r_stack.south west) (mem_micro) {Memory:\\ \textit{Microcode} \\ \textit{(ROM)}};
+      \node[memory, minimum height=3cm, anchor=south east, xshift=-2.5cm] at (r_stack.south west) (mem_micro) {Memory:\\ \textit{Microcode}};
       \node[register, rotate=90, anchor=south west, yshift=1cm, minimum width=3cm, minimum height=.7cm] at (mem_micro.south west) (mr) {MR};
       \node[register, anchor=south east, yshift=1cm] at (mem_micro.north east) (mpc) {$\mu$PC};
       \node[mux, rotate=90, anchor=south, yshift=.5cm] at (mpc.west) (mux_mpc) {$\mu$PC};
