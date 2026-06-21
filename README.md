@@ -37,7 +37,7 @@ instruction = stack_push_instr
             | flag_instr
             | nop_instr ;
 
-stack_push_instr   = "(" ":" value ")" ;
+stack_push_instr   = "(" ":" arg_value ")" ;
 stack_pop_instr    = "(" identifier ":" ")" ;
 stack_dup_instr    = "(" identifier ":" identifier "," identifier ")" ;
 stack_swap_instr   = "(" identifier "," identifier ":" identifier "," identifier ")" ;
@@ -63,34 +63,37 @@ preprocessor_directive = define_directive
                        | macro_call
                        | conditional_compilation ;
 
-define_directive = "@define" identifier ( value | identifier ) ;
+define_directive = "@define" identifier ( arg_value | identifier ) ;
 
 macro_definition = "@macro" identifier "(" [ macro_def_params ] ")" "{" program "}" ;
 macro_def_params = identifier { "," identifier } ;
 
 macro_call       = "$" identifier "(" [ macro_call_args ] ")" ;
 macro_call_args  = argument { "," argument } ;
-argument         = value | identifier ;
+argument         = arg_value | identifier ;
 
 conditional_compilation = "@if" "(" condition ")" "{" program "}" 
                           { "@elif" "(" condition ")" "{" program "}" } 
                           [ "@else" "{" program "}" ] ;
 
-condition  = expression ;
-expression = value [ cond_binary_op expression ] ;
-cond_binary_op  = "==" | "!=" | "<" | ">" | "<=" | ">=" | "+" | "-" | "&&" | "||" ;
-
-value = number 
-      | constant_reference 
-      | macro_param_reference
-      | label_name ;
-
 constant_reference    = "$" identifier ;
 macro_param_reference = "%" identifier ;
 label_name            = "_" ( letter | digit | "_" ) { letter | digit | "_" } ;
 
+condition  = expression ;
+expression = cond_value cond_binary_op cond_value ;
+cond_binary_op  = "==" | "!=" ;
+cond_value = number | constant_reference ;
+
+arg_value = number 
+          | constant_reference 
+          | macro_param_reference
+          | label_name ;
+
 identifier = letter { letter | digit | "_" } ;
-number     = [ "-" ] digit { digit } ;
+number     = [ "-" ] decimal_num | hex_num ;
+decimal_num = digit { digit } ;
+hex_num     = ( "0x" | "0X" ) hex_digit { hex_digit } ;
 comment    = ";" { character } ;
 
 letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" 
@@ -99,6 +102,9 @@ letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" |
        | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" ;
        
 digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+hex_digit = digit 
+          | "a" | "b" | "c" | "d" | "e" | "f" 
+          | "A" | "B" | "C" | "D" | "E" | "F" ;
 character = ? любой печатный символ или пробел до конца строки ? ;
 ```
 

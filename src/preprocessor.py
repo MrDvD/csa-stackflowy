@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Tuple, List
-from isa import Comment, Macros, Label
+from isa import Comment, Macros, Label, ArgType
 
 
 class Preprocessor:
@@ -13,17 +13,42 @@ class Preprocessor:
         return Comment.regex.sub("", source)
 
     def _evaluate_condition(self, condition: str) -> bool:
-        condition = condition.strip()
-        if "==" in condition:
-            parts = condition.split("==")
-            left = self.defines.get(parts[0].strip(), parts[0].strip())
-            right = self.defines.get(parts[1].strip(), parts[1].strip())
-            return left == right
+        match = Macros.condition_regex.match(condition)
+        if not match:
+            raise ValueError(f"Invalid condition syntax: '{condition}'")
 
-        val = self.defines.get(condition, None)
-        if val is None:
-            return False
-        return val.lower() not in ("0", "false", "no")
+        left, op, right = match.groups()
+        match ArgType.get(left):
+            case ArgType.DEC | ArgType.HEX:
+                left_val = left
+            case ArgType.LABEL:
+                raise ValueError(f"Labels unsupported in conditionals: {left}")
+            case ArgType.UNKNOWN:
+                key = left[1:]
+                if key not in self.defines:
+                    raise ValueError(f"Left conditional operand unknown: {left}")
+                left_val = self.defines[key]
+
+        match ArgType.get(right):
+            case ArgType.DEC | ArgType.HEX:
+                right_val = right
+            case ArgType.LABEL:
+                raise ValueError(f"Labels unsupported in conditionals: {right}")
+            case ArgType.UNKNOWN:
+                key = right[1:]
+                if key not in self.defines:
+                    raise ValueError(f"Right conditional operand unknown: {right}")
+                right_val = self.defines[key]
+
+        match op:
+            case "==":
+                return left_val == right_val
+            case "!=":
+                return left_val != right_val
+            case _:
+                raise ValueError(
+                    f"Unsupported operator in conditional statement: '{op}'"
+                )
 
     def _replace_conditional(self, match: re.Match[str]) -> str:
         groups = match.groups()

@@ -35,7 +35,7 @@ in_source: |-
 
     $PRINT(_newline)
 
-    @if (USE_EXTENDED == 1) {
+    @if ($USE_EXTENDED == 1) {
       $PRINT(_greet_ext)
     } @else {
       $PRINT(_greet_sht)
@@ -87,7 +87,6 @@ in_source: |-
     ( : 0xFF )
     ( m : ~m )
     ( w, m : w & m )
-    ( char, cleared_word : cleared_word, char )
     ( cleared_word, char : cleared_word | char )
     ( current_addr, final_word : final_word, current_addr )
     ( val, addr : ) => MEM_DATA
@@ -182,8 +181,8 @@ out_data_hex: |-
 out_text: !!binary |
   FAUAAAAcBAAAABZCAAAAHCwAAAAWagAAABwkAAAAFkIAAAAcGAAAABZCAAAAHCwAAAAWQgAAABwo
   AAAAFkIAAAABHhgc/wAAAAgeHAAAAAAPFWcAAAAcAgAAABscAQAAAAQUQgAAAB0dFx4eHAAAAAAa
-  HhwAAAAADxWWAAAAHxgc/wAAAA0IHwkfGRwBAAAABBRqAAAAHR4cAAAAAB8YHP8AAAANCB8JHxkd
-  HRc=
+  HhwAAAAADxWVAAAAHxgc/wAAAA0ICR8ZHAEAAAAEFGoAAAAdHhwAAAAAHxgc/wAAAA0IHwkfGR0d
+  Fw==
 out_text_hex: |-
   0x00000000 - 0x1405000000 - jump 5
   0x00000005 - 0x1c04000000 - push 4
@@ -222,41 +221,40 @@ out_text_hex: |-
   0x00000072 - 0x1e - duplicate
   0x00000073 - 0x1c00000000 - push 0
   0x00000078 - 0x0f - is_==
-  0x00000079 - 0x1596000000 - jump_if 150
+  0x00000079 - 0x1595000000 - jump_if 149
   0x0000007e - 0x1f - swap
   0x0000007f - 0x18 - load
   0x00000080 - 0x1cff000000 - push 255
   0x00000085 - 0x0d - invert
   0x00000086 - 0x08 - and
-  0x00000087 - 0x1f - swap
-  0x00000088 - 0x09 - or
-  0x00000089 - 0x1f - swap
-  0x0000008a - 0x19 - store
-  0x0000008b - 0x1c01000000 - push 1
-  0x00000090 - 0x04 - add
-  0x00000091 - 0x146a000000 - jump 106
-  0x00000096 - 0x1d - pop
-  0x00000097 - 0x1e - duplicate
-  0x00000098 - 0x1c00000000 - push 0
-  0x0000009d - 0x1f - swap
-  0x0000009e - 0x18 - load
-  0x0000009f - 0x1cff000000 - push 255
-  0x000000a4 - 0x0d - invert
-  0x000000a5 - 0x08 - and
-  0x000000a6 - 0x1f - swap
-  0x000000a7 - 0x09 - or
-  0x000000a8 - 0x1f - swap
-  0x000000a9 - 0x19 - store
+  0x00000087 - 0x09 - or
+  0x00000088 - 0x1f - swap
+  0x00000089 - 0x19 - store
+  0x0000008a - 0x1c01000000 - push 1
+  0x0000008f - 0x04 - add
+  0x00000090 - 0x146a000000 - jump 106
+  0x00000095 - 0x1d - pop
+  0x00000096 - 0x1e - duplicate
+  0x00000097 - 0x1c00000000 - push 0
+  0x0000009c - 0x1f - swap
+  0x0000009d - 0x18 - load
+  0x0000009e - 0x1cff000000 - push 255
+  0x000000a3 - 0x0d - invert
+  0x000000a4 - 0x08 - and
+  0x000000a5 - 0x1f - swap
+  0x000000a6 - 0x09 - or
+  0x000000a7 - 0x1f - swap
+  0x000000a8 - 0x19 - store
+  0x000000a9 - 0x1d - pop
   0x000000aa - 0x1d - pop
-  0x000000ab - 0x1d - pop
-  0x000000ac - 0x17 - ret
+  0x000000ab - 0x17 - ret
 out_stdout: |
   outputbuffer[0]: []
   outputbuffer[1]: []
   outputbuffer[2]: [87, 104, 97, 116, 32, 105, 115, 32, 121, 111, 117, 114, 32, 110, 97, 109, 101, 63, 10, 72, 101, 108, 108, 111, 44, 32, 77, 97, 107, 97, 114, 33]
   outputbuffer[3]: []
   
-  ticks: 3798
+  ticks: 3768
 out_log: |
   0 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 00000000 Td: 00000000 Tr: 00000000
   1 [S] | PC: 00000000 mPC: 00 IPF: 00000000 IR: no_op S: 00000000 Td: 00000000 Tr: 00000000

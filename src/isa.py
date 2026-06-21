@@ -161,6 +161,7 @@ class Macros:
     )
     macro_regex = re.compile(r"@macro\s+(\w+)\s*\((.*?)\)\s*\{(.*?)\}", re.DOTALL)
     def_regex = re.compile(r"@define\s+(\w+)\s+(.+)")
+    condition_regex = re.compile(r"^\s*(.+?)\s*(==|!=)\s*(.+?)\s*$")
 
 
 class Segment:
