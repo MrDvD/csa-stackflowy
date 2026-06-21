@@ -51,13 +51,16 @@ class Preprocessor:
                 )
 
     def _replace_conditional(self, match: re.Match[str]) -> str:
-        groups = match.groups()
-        if self._evaluate_condition(groups[0]):
-            return groups[1]
-        if groups[2] and self._evaluate_condition(groups[2]):
-            return groups[3]
-        if groups[4]:
-            return groups[4]
+        if_cond, if_body, elif_block, else_body = match.groups()
+        if self._evaluate_condition(if_cond):
+            return if_body
+        if elif_block:
+            elif_matches = Macros.elif_regex.findall(elif_block, re.DOTALL)
+            for elif_cond, elif_body in elif_matches:
+                if self._evaluate_condition(elif_cond):
+                    return elif_body
+        if else_body:
+            return else_body
         return ""
 
     def _process_conditionals(self, source: str) -> str:
