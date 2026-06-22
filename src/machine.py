@@ -45,8 +45,6 @@ class Processor:
                     f"{model_tick} [{'S' if stalled else ' '}] | {self.control_unit}"
                 )
                 model_tick += 1
-                if model_tick == 94:
-                    continue
         except Exception as e:
             raise e
 

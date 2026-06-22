@@ -4,6 +4,7 @@ __pycache__
 venv/
 .vscode/
 .ruff_cache/
+out/
 
 output.py
 

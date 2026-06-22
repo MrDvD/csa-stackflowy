@@ -155,14 +155,16 @@ class Comment:
 class Macros:
     if_regex = re.compile(
         r"@if\s*\((.*?)\)\s*\{(.*?)\}"
-        r"(?:\s*@elif\s*\((.*?)\)\s*\{(.*?)\})*"
+        r"((?:\s*@elif\s*\(.*?\)\s*\{.*?\})*)"
         r"(?:\s*@else\s*\{(.*?)\})?",
         re.DOTALL,
     )
+    elif_regex = re.compile(r"@elif\s*\((.*?)\)\s*\{(.*?)\}")
     macro_regex = re.compile(r"@macro\s+(\w+)\s*\((.*?)\)\s*\{(.*?)\}", re.DOTALL)
     def_regex = re.compile(r"@define\s+(\w+)\s+(.+)")
+    condition_regex = re.compile(r"^\s*(.+?)\s*(==|!=)\s*(.+?)\s*$")
 
 
 class Segment:
-    data_regex = re.compile(r"\.data(?:@(0x\d+|\d+))?")
-    text_regex = re.compile(r"\.text(?:@(0x\d+|\d+))?")
+    data_regex = re.compile(rf"\.data(?:@({Numeral.pattern}))?")
+    text_regex = re.compile(rf"\.text(?:@({Numeral.pattern}))?")

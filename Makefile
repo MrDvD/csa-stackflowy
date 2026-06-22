@@ -1,5 +1,5 @@
 schema_dir = schema
-schema_names = c_unit datapath
+schema_names = c_unit datapath i_prefetch io i_cache
 
 pdf:
 	cd "${schema_dir}"; \

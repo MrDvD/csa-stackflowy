@@ -1,0 +1,237 @@
+; Программа сортировки числового массива, заканчивающегося нулём
+; Считывает числа, сохраняет в память, сортирует пузырьком и выводит результат
+
+@define STDIN 0
+@define STDOUT 3
+
+@define ARR_ADDR 0xFF
+
+@macro READ_BYTE() {
+  ; expecting on stack: [ addr ]
+  ( addr : val ) <= MEM_DATA
+  ( : 0xFF )
+  ( val, mask : val & mask )
+}
+
+@macro WRITE_BYTE_TO_ADDR() {
+  ; expecting on stack: [ addr, val, addr ]
+  ( addr : old_word ) <= MEM_DATA
+  ( : 0xFFFFFF00 )
+  ( old_word, m : old_word & m )
+  ( val, cleared : val | cleared )
+  ( addr, final_word : final_word, addr )
+  ( val, addr : ) => MEM_DATA
+}
+
+    .data
+_ptr_var:     $ARR_ADDR
+_len_var:     0x0
+_swapped_var: 0x0
+_n_var:       0x0
+_i_var:       0x0
+_curr_ptr:    0x0
+
+    .data@$ARR_ADDR
+_array_start: 0x0
+
+    .text
+
+_main:
+_read_loop:
+  ( : $STDIN )
+  ( port : val ) <= IN
+
+  ( val : val, val )
+  ( : 0 )
+  ( val, zero : val == zero )
+  <? _sort_init >
+
+  ( : _ptr_var )
+  ( addr : ptr ) <= MEM_DATA
+  ( val, ptr : ptr, val )
+  ( : _ptr_var )
+  ( addr : ptr ) <= MEM_DATA
+  $WRITE_BYTE_TO_ADDR()
+
+  ( : _ptr_var )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  ( : _ptr_var )
+  ( val, addr : ) => MEM_DATA
+
+  ( : _len_var )
+  ( addr : len ) <= MEM_DATA
+  ( : 1 )
+  ( len, one : len + one )
+  ( : _len_var )
+  ( val, addr : ) => MEM_DATA
+
+  < _read_loop >
+
+_sort_init:
+  ( zero_val : )
+
+  ( : _len_var )
+  ( addr : len ) <= MEM_DATA
+  ( : _n_var )
+  ( val, addr : ) => MEM_DATA
+
+_outer_loop:
+  ; n <= 1?
+  ( : _n_var )
+  ( addr : n ) <= MEM_DATA
+  ( : 1 )
+  ( n, one : n <= one )
+  <? _print_init >
+
+  ; swapped = 0
+  ( : 0 )
+  ( : _swapped_var )
+  ( val, addr : ) => MEM_DATA
+
+  ; curr_ptr = ARR_ADDR
+  ( : $ARR_ADDR )
+  ( : _curr_ptr )
+  ( val, addr : ) => MEM_DATA
+
+  ; i = 0
+  ( : 0 )
+  ( : _i_var )
+  ( val, addr : ) => MEM_DATA
+
+_inner_loop:
+  ; i >= (n - 1)?
+  ( : _n_var )
+  ( addr : n ) <= MEM_DATA
+  ( : 1 )
+  ( n, one : n - one )
+  ( : _i_var )
+  ( addr : i ) <= MEM_DATA
+  ( limit, i : limit <= i )
+  <? _inner_done >
+
+  ; val1 = arr[ptr]
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  $READ_BYTE()
+
+  ; val2 = arr[ptr + 1]
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  $READ_BYTE()
+
+  ; val1 <= val2 --> skipping swap
+  ( val1, val2 : val1 <= val2 )
+  <? _skip_swap >
+  
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  $READ_BYTE()
+  
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  $READ_BYTE()
+  
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( val2, ptr : ptr, val2 )
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  $WRITE_BYTE_TO_ADDR()
+
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  ( val1, next_ptr : next_ptr, val1 )
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  $WRITE_BYTE_TO_ADDR()
+  
+  ( : 1 )
+  ( : _swapped_var )
+  ( val, addr : ) => MEM_DATA
+
+_skip_swap:
+  ; i += 1
+  ( : _i_var )
+  ( addr : i ) <= MEM_DATA
+  ( : 1 )
+  ( i, one : i + one )
+  ( : _i_var )
+  ( val, addr : ) => MEM_DATA
+  
+  ; curr_ptr += 1
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  ( : _curr_ptr )
+  ( val, addr : ) => MEM_DATA
+
+  < _inner_loop >
+
+_inner_done:
+  ; swapped == 0 --> array is sorted
+  ( : _swapped_var )
+  ( addr : swapped ) <= MEM_DATA
+  ( : 0 )
+  ( swapped, zero : swapped == zero )
+  <? _print_init >
+  
+  ; n -= 1
+  ( : _n_var )
+  ( addr : n ) <= MEM_DATA
+  ( : 1 )
+  ( n, one : n - one )
+  ( : _n_var )
+  ( val, addr : ) => MEM_DATA
+  
+  < _outer_loop >
+
+_print_init:
+  ( : $ARR_ADDR )
+  ( : _curr_ptr )
+  ( val, addr : ) => MEM_DATA
+
+_print_loop:
+  ( : _len_var )
+  ( addr : len ) <= MEM_DATA
+  ( : 0 )
+  ( len, zero : len == zero )
+  <? _exit >
+
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  $READ_BYTE()
+
+  ( : $STDOUT )
+  ( val, port : ) => OUT
+
+  ; curr_ptr += 1
+  ( : _curr_ptr )
+  ( addr : ptr ) <= MEM_DATA
+  ( : 1 )
+  ( ptr, one : ptr + one )
+  ( : _curr_ptr )
+  ( val, addr : ) => MEM_DATA
+
+  ; len -= 1
+  ( : _len_var )
+  ( addr : len ) <= MEM_DATA
+  ( : 1 )
+  ( len, one : len - one )
+  ( : _len_var )
+  ( val, addr : ) => MEM_DATA
+
+  < _print_loop >
+
+_exit:
+  <...>
