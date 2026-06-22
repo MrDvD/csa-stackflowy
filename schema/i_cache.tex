@@ -18,13 +18,14 @@
 
     \draw[data bus] ([yshift=5cm, xshift=-2cm]comp.90) -| node[pos=.5] (addr_branch) {} node[pos=0.02, above right] {\footnotesize addr}  (comp.90);
     \draw[data bus] ([yshift=.5cm, xshift=-1.5cm]comp.120) -| node[pos=0.02, above right] {\footnotesize V$_1\equiv 1$}  (comp.120);
-    \draw[data bus] (i_cache.195) -| node[pos=.5, dot] (word_branch) {} node[pos=0.02, above left] {\footnotesize cache line} node[pos=0.98, above right] {\footnotesize V$_2$, tag$_2$} (comp.60);
-    \draw[data bus] (word_branch) -- node[pos=0.98, above left, rotate=90] {\footnotesize word} +(0,5.25);
-    \draw[data bus] (addr_branch |- i_cache.165) node[dot] {} node[above left, rotate=90] {\footnotesize tag$_1$} -- node[pos=0.98, above left] {\footnotesize index}  (i_cache.165);
-    \draw[data bus] (i_mem.west |- i_cache.-15) -- node[pos=0.98, above right] {\footnotesize iout}  (i_cache.-15);
-    \draw[data bus] ([xshift=1.5cm]i_cache.15) -- node[pos=0.98, above right] {\footnotesize V$_\text{new}\equiv 1$}  (i_cache.15);
+    \draw[data bus] (i_cache.90) -- +(0,.5) -| node[pos=.5, dot] (word_branch) {} node[pos=0.02, above left] {\footnotesize cache line} node[pos=0.98, above right] {\footnotesize V$_2$, tag$_2$} (comp.60);
+    \draw[data bus] (word_branch) -- node[pos=0.98, above left, rotate=90] {\footnotesize word} +(0,3.25);
+    \draw[data bus] (addr_branch |- i_cache.180) node[dot] {} node[above left, rotate=90] {\footnotesize tag$_1$} -- node[pos=0.98, above left] {\footnotesize index}  (i_cache.180);
+    \draw[data bus] (i_mem.west |- i_cache.-20) -- node[pos=0.98, above right] {\footnotesize iout}  (i_cache.-20);
+    \draw[data bus] ([xshift=1.5cm]i_cache.0) -- node[pos=0.98, above right] {\footnotesize V$_\text{new}\equiv 1$}  (i_cache.0);
     \draw[control bus] (comp.east) -| node[pos=0, dot_inv] {} node[pos=.5, dot] (miss_branch) {} node[pos=0.02, above right] {\footnotesize cache miss} node[pos=0.98, above left, rotate=90] {\footnotesize wr} (i_cache.south);
     \draw[control bus] (miss_branch) -| ([xshift=-1cm]i_mem.-130) -- node[pos=0.98, above left] {\footnotesize oe} (i_mem.-130);
+    \draw[data bus] ([yshift=.5cm]addr_branch |- word_branch) node[dot] {} -| node[pos=0.5, above left] {\footnotesize tag$_{\text{new}}$} ([xshift=.5cm]i_cache.20) -- (i_cache.20);
   \end{tikzpicture}
   \end{adjustbox}
 \end{center}
